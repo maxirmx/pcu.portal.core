@@ -33,6 +33,7 @@ using Fuelflux.Core.RestModels;
 using Fuelflux.Core.Settings;
 using Fuelflux.Core.Data;
 using Fuelflux.Core.Models;
+using Fuelflux.Core.Services;
 using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 
 namespace Fuelflux.Core.Controllers;
@@ -46,8 +47,11 @@ namespace Fuelflux.Core.Controllers;
 public class UsersController(
     IHttpContextAccessor httpContextAccessor,
     AppDbContext db,
+    IUserInformationService userInformationService,
     ILogger<UsersController> logger) : FuelfluxControllerBase(httpContextAccessor, db, logger)
 {
+    private readonly IUserInformationService _userInformationService = userInformationService;
+
     // GET: api/users
     [HttpGet]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<UserViewItem>))]
@@ -55,15 +59,14 @@ public class UsersController(
     public async Task<ActionResult<IEnumerable<UserViewItem>>> GetUsers()
     {
         _logger.LogDebug("GetUsers");
-        var ch = await _db.CheckAdmin(_curUserId);
+        var ch = await _userInformationService.CheckAdmin(_curUserId);
         if (!ch)
         {
-            if (!ch)
             _logger.LogDebug("GetUsers returning '403 Forbidden'");
             return _403();
         }
 
-        var res = await _db.UserViewItems();
+        var res = await _userInformationService.UserViewItems();
         _logger.LogDebug("GetUsers returning:\n{items}\n", JsonSerializer.Serialize(res, JOptions.DefaultOptions));
 
         return res;
@@ -77,14 +80,14 @@ public class UsersController(
     public async Task<ActionResult<UserViewItem>> GetUser(int id)
     {
         _logger.LogDebug("GetUser for id={id}", id);
-        var ch = await _db.CheckAdminOrSameUser(id, _curUserId);
+        var ch = await _userInformationService.CheckAdminOrSameUser(id, _curUserId);
         if (ch == null || !ch.Value)
         {
             _logger.LogDebug("GetUser returning '403 Forbidden'");
             return _403();
         }
 
-        var user = await _db.UserViewItem(id);
+        var user = await _userInformationService.UserViewItem(id);
         if (user == null)
         {
             _logger.LogDebug("GetUser returning '404 Not Found'");
@@ -104,14 +107,14 @@ public class UsersController(
     public async Task<ActionResult<Reference>> PostUser(UserCreateItem user)
     {
         _logger.LogDebug("PostUser (create) for {user}", user.ToString());
-        var ch = await _db.CheckAdmin(_curUserId);
+        var ch = await _userInformationService.CheckAdmin(_curUserId);
         if (!ch)
         {
             _logger.LogDebug("PostUser returning '403 Forbidden'");
             return _403();
         }
 
-        if (_db.Exists(user.Email))
+        if (_userInformationService.Exists(user.Email))
         {
             _logger.LogDebug("PostUser returning '409 Conflict'");
             return _409Email(user.Email);
@@ -164,8 +167,8 @@ public class UsersController(
         bool adminRequired = update.IsAdministrator() && !user.IsAdministrator();
 
         ActionResult<bool> ch;
-        ch = adminRequired ? await _db.CheckAdmin(_curUserId) :
-                             await _db.CheckAdminOrSameUser(id, _curUserId);
+        ch = adminRequired ? await _userInformationService.CheckAdmin(_curUserId) :
+                             await _userInformationService.CheckAdminOrSameUser(id, _curUserId);
         if (ch == null || !ch.Value)
         {
             _logger.LogDebug("PutUser returning '403 Forbidden'");
@@ -174,7 +177,7 @@ public class UsersController(
 
         if (update.Email != null && user.Email != update.Email)
         {
-            if (_db.Exists(update.Email)) return _409Email(update.Email);
+            if (_userInformationService.Exists(update.Email)) return _409Email(update.Email);
             user.Email = update.Email;
         }
 
@@ -215,7 +218,7 @@ public class UsersController(
     public async Task<IActionResult> DeleteUser(int id)
     {
         _logger.LogDebug("DeleteUser for id={id}", id);
-        var ch = await _db.CheckAdmin(_curUserId);
+        var ch = await _userInformationService.CheckAdmin(_curUserId);
         if (!ch)
         {
             _logger.LogDebug("DeleteUser returning '403 Forbidden'");

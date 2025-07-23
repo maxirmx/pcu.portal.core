@@ -41,20 +41,20 @@ public class UserTests
     [Test]
     public void HasAnyRole_ReturnsTrue_WhenRolesExist()
     {
-        var role = new Role { RoleId = UserRoleConstants.Admin, Name = "admin" };
+        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "admin" };
         var user = new User
         {
             Email = "test@example.com",
             Password = "password123",
-            UserRoles = [new() { Role = role }]
+            UserRoles = [new() { RoleId = role.Id, Role = role }]
         };
         Assert.That(user.HasAnyRole(), Is.True);
     }
 
     [Test]
-    public void HasRole_IgnoresCase()
+    public void HasRole_ReturnsTrue_WhenUserHasRole()
     {
-        var role = new Role { RoleId = UserRoleConstants.Admin, Name = "Admin" };
+        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "Admin" };
         var user = new User
         {
             Id = 1,
@@ -78,7 +78,7 @@ public class UserTests
     [Test]
     public void IsAdministrator_ReturnsTrue_WhenAdminRolePresent()
     {
-        var role = new Role { RoleId = UserRoleConstants.Admin, Name = "administrator" };
+        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "administrator" };
         var user = new User
         {
             Id = 1,
@@ -90,5 +90,39 @@ public class UserTests
             ]
         };
         Assert.That(user.IsAdministrator(), Is.True);
+    }
+
+    [Test]
+    public void IsOperator_ReturnsTrue_WhenOperatorRolePresent()
+    {
+        var role = new Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "operator" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "password123",
+            UserRoles =
+            [
+                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
+            ]
+        };
+        Assert.That(user.IsOperator(), Is.True);
+    }
+
+    [Test]
+    public void IsOperator_ReturnsFalse_WhenOperatorRoleNotPresent()
+    {
+        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "admin" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "password123",
+            UserRoles =
+            [
+                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
+            ]
+        };
+        Assert.That(user.IsOperator(), Is.False);
     }
 }

@@ -39,6 +39,7 @@ using Fuelflux.Core.Controllers;
 using Fuelflux.Core.Data;
 using Fuelflux.Core.Models;
 using Fuelflux.Core.RestModels;
+using Fuelflux.Core.Services;
 
 namespace Fuelflux.Core.Tests.Controllers;
 
@@ -48,6 +49,7 @@ public class UsersControllerTests
 #pragma warning disable CS8618 // Non-nullable field must contain a non-null value when exiting constructor. 
     private Mock<IHttpContextAccessor> _mockHttpContextAccessor;
     private Mock<ILogger<UsersController>> _mockLogger;
+    private Mock<IUserInformationService> _mockUserInformationService;
     private AppDbContext _dbContext;
     private UsersController _controller;
     private User _adminUser;
@@ -123,6 +125,7 @@ public class UsersControllerTests
         // Setup mocks
         _mockHttpContextAccessor = new Mock<IHttpContextAccessor>();
         _mockLogger = new Mock<ILogger<UsersController>>();
+        _mockUserInformationService = new Mock<IUserInformationService>();
 
         // Save entities to database
         _dbContext.SaveChanges();
@@ -145,6 +148,15 @@ public class UsersControllerTests
         _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
+        var expectedUsers = new List<UserViewItem>
+        {
+            new(_adminUser),
+            new(_operatorUser)
+        };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
+        _mockUserInformationService.Setup(x => x.UserViewItems()).ReturnsAsync(expectedUsers);
+
         // Act
         var result = await _controller.GetUsers();
 
@@ -152,7 +164,7 @@ public class UsersControllerTests
         Assert.That(result.Value, Is.Not.Null);
         Assert.That(result.Value, Is.InstanceOf<IEnumerable<UserViewItem>>());
         var users = result.Value as IEnumerable<UserViewItem>;
-        Assert.That(users, Has.Count.GreaterThanOrEqualTo(2));
+        Assert.That(users, Has.Count.EqualTo(2));
     }
 
     [Test]
@@ -162,6 +174,8 @@ public class UsersControllerTests
         SetCurrentUserId(2); // Operator user
         _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(2)).ReturnsAsync(false);
 
         // Act
         var result = await _controller.GetUsers();
@@ -185,6 +199,11 @@ public class UsersControllerTests
         _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
 
+        var expectedUser = new UserViewItem(_customerUser);
+
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(3, 1)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.UserViewItem(3)).ReturnsAsync(expectedUser);
+
         // Act
         var result = await _controller.GetUser(3); // Getting customer user
 
@@ -203,6 +222,11 @@ public class UsersControllerTests
         SetCurrentUserId(2); // Operator user
         _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
+
+        var expectedUser = new UserViewItem(_operatorUser);
+
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 2)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.UserViewItem(2)).ReturnsAsync(expectedUser);
 
         // Act
         var result = await _controller.GetUser(2); // Getting self
@@ -223,6 +247,8 @@ public class UsersControllerTests
         _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
 
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(1, 2)).ReturnsAsync(new ActionResult<bool>(false));
+
         // Act
         var result = await _controller.GetUser(1); // Getting admin user
 
@@ -240,6 +266,9 @@ public class UsersControllerTests
         SetCurrentUserId(1); // Admin user
         _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
+
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(999, 1)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.UserViewItem(999)).ReturnsAsync((UserViewItem?)null);
 
         // Act
         var result = await _controller.GetUser(999); // Non-existent user
@@ -272,6 +301,9 @@ public class UsersControllerTests
             Patronymic = "",
             Roles = [ UserRoleConstants.Customer ] // Assigning role by enum value
         };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
+        _mockUserInformationService.Setup(x => x.Exists("new@example.com")).Returns(false);
 
         // Act
         var result = await _controller.PostUser(newUser);
@@ -311,6 +343,8 @@ public class UsersControllerTests
             Patronymic = ""
         };
 
+        _mockUserInformationService.Setup(x => x.CheckAdmin(2)).ReturnsAsync(false);
+
         // Act
         var result = await _controller.PostUser(newUser);
 
@@ -336,6 +370,9 @@ public class UsersControllerTests
             LastName = "User",
             Patronymic = ""
         };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
+        _mockUserInformationService.Setup(x => x.Exists("customer@example.com")).Returns(true);
 
         // Act
         var result = await _controller.PostUser(newUser);
@@ -365,6 +402,9 @@ public class UsersControllerTests
             Email = "updated@example.com",
             Roles = [UserRoleConstants.Customer]
         };
+
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 1)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.Exists("updated@example.com")).Returns(false);
 
         // Act
         var result = await _controller.PutUser(2, updateItem);
@@ -401,6 +441,8 @@ public class UsersControllerTests
             // Not changing roles as non-admin
         };
 
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 2)).ReturnsAsync(new ActionResult<bool>(true));
+
         // Act
         var result = await _controller.PutUser(2, updateItem);
 
@@ -427,6 +469,8 @@ public class UsersControllerTests
             FirstName = "Try",
             LastName = "Update"
         };
+
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(1, 2)).ReturnsAsync(new ActionResult<bool>(false));
 
         // Act
         var result = await _controller.PutUser(1, updateItem);
@@ -473,6 +517,9 @@ public class UsersControllerTests
             Email = "admin@example.com" // Already exists
         };
 
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 1)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.Exists("admin@example.com")).Returns(true);
+
         // Act
         var result = await _controller.PutUser(2, updateItem);
 
@@ -494,6 +541,8 @@ public class UsersControllerTests
         {
             Password = "newpassword123"
         };
+
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 1)).ReturnsAsync(new ActionResult<bool>(true));
 
         // Act
         var result = await _controller.PutUser(2, updateItem);
@@ -521,6 +570,8 @@ public class UsersControllerTests
             Roles = [UserRoleConstants.Admin] // Trying to become admin
         };
 
+        _mockUserInformationService.Setup(x => x.CheckAdmin(2)).ReturnsAsync(false);
+
         // Act
         var result = await _controller.PutUser(2, updateItem);
 
@@ -542,6 +593,8 @@ public class UsersControllerTests
         _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
 
+        _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
+
         // Act
         var result = await _controller.DeleteUser(2);
 
@@ -561,6 +614,8 @@ public class UsersControllerTests
         _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
+        _mockUserInformationService.Setup(x => x.CheckAdmin(2)).ReturnsAsync(false);
+
         // Act
         var result = await _controller.DeleteUser(1);
 
@@ -578,6 +633,8 @@ public class UsersControllerTests
         _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
+        _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
+
         // Act
         var result = await _controller.DeleteUser(999);
 
@@ -594,6 +651,6 @@ public class UsersControllerTests
         var httpContext = new DefaultHttpContext();
         httpContext.Items["UserId"] = userId;
         _mockHttpContextAccessor.Setup(x => x.HttpContext).Returns(httpContext);
-        _controller = new UsersController(_mockHttpContextAccessor.Object, _dbContext, _mockLogger.Object);
+        _controller = new UsersController(_mockHttpContextAccessor.Object, _dbContext, _mockUserInformationService.Object, _mockLogger.Object);
     }
 }

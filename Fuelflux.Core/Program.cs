@@ -25,6 +25,7 @@
 
 using Fuelflux.Core.Authorization;
 using Fuelflux.Core.Data;
+using Fuelflux.Core.Services;
 using Fuelflux.Core.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
@@ -47,6 +48,7 @@ builder.WebHost.ConfigureKestrel(options =>
 builder.Services
     .Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"))
     .AddScoped<IJwtUtils, JwtUtils>()
+    .AddScoped<IUserInformationService, UserInformationService>()
     .AddHttpContextAccessor()
     .AddControllers();
 

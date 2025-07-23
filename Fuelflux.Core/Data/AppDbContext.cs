@@ -24,10 +24,7 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 using Microsoft.EntityFrameworkCore;
-
 using Fuelflux.Core.Models;
-using Fuelflux.Core.RestModels;
-using Microsoft.AspNetCore.Mvc;
 
 namespace Fuelflux.Core.Data
 {
@@ -39,66 +36,7 @@ namespace Fuelflux.Core.Data
         public DbSet<User> Users => Set<User>();
         public DbSet<Role> Roles => Set<Role>();
         public DbSet<UserRole> UserRoles => Set<UserRole>();
-        public async Task<bool> CheckAdmin(int cuid)
-        {
-            var user = await Users
-                .AsNoTracking()
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-                .Where(x => x.Id == cuid)
-                .FirstOrDefaultAsync(); 
-            return user != null && user.IsAdministrator();
-        }
-        public async Task<bool> CheckOperator(int cuid)
-        {
-            var user = await Users
-                .AsNoTracking()
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-                .Where(x => x.Id == cuid)
-                .FirstOrDefaultAsync();
-            return user != null && user.IsOperator();
-        }
-        public async Task<ActionResult<bool>> CheckAdminOrSameUser(int id, int cuid)
-        {
-            if (cuid == 0) return false;
-            if (cuid == id) return true;
-            return await CheckAdmin(cuid);
-        }
-        public bool CheckSameUser(int id, int cuid)
-        {
-            if (cuid == 0) return false;
-            if (cuid == id) return true;
-            return false;
-        }
-        public bool Exists(int id)
-        {
-            return Users.Any(e => e.Id == id);
-        }
-        public bool Exists(string email)
-        {
-            return Users.Any(u => u.Email.ToLower() == email.ToLower());
-        }
-        public async Task<UserViewItem?> UserViewItem(int id)
-        {
-            var user = await Users
-                .AsNoTracking()
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-                .Where(x => x.Id == id)
-                .Select(x => new UserViewItem(x))
-                .FirstOrDefaultAsync();
-            return user ?? null;
-        }
-        public async Task<List<UserViewItem>> UserViewItems()
-        {
-            return await Users
-                .AsNoTracking()
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
-                .Select(x => new UserViewItem(x))
-                .ToListAsync();
-        }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -115,7 +53,6 @@ namespace Fuelflux.Core.Data
                 .HasOne(ur => ur.Role)
                 .WithMany(r => r.UserRoles)
                 .HasForeignKey(ur => ur.RoleId);
-
 
             modelBuilder.Entity<Role>().HasData(
                 new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "Администратор системы" },
