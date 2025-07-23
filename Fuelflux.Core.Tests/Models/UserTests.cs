@@ -41,7 +41,7 @@ public class UserTests
     [Test]
     public void HasAnyRole_ReturnsTrue_WhenRolesExist()
     {
-        var role = new Role { Id = (int)UserRoleConstants.Admin, Name = "admin" };
+        var role = new Role { RoleId = UserRoleConstants.Admin, Name = "admin" };
         var user = new User
         {
             Email = "test@example.com",
@@ -54,7 +54,7 @@ public class UserTests
     [Test]
     public void HasRole_IgnoresCase()
     {
-        var role = new Role { Id = (int)UserRoleConstants.Admin, Name = "Admin" };
+        var role = new Role { RoleId = UserRoleConstants.Admin, Name = "Admin" };
         var user = new User
         {
             Id = 1,
@@ -62,7 +62,7 @@ public class UserTests
             Password = "password123",
             UserRoles =
             [
-                new UserRole { UserId = 1, RoleId = (int)UserRoleConstants.Admin, Role = role }
+                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
             ]
         };
         Assert.That(user.HasRole(UserRoleConstants.Admin), Is.True);
@@ -78,7 +78,7 @@ public class UserTests
     [Test]
     public void IsAdministrator_ReturnsTrue_WhenAdminRolePresent()
     {
-        var role = new Role { Id = (int)UserRoleConstants.Admin, Name = "administrator" };
+        var role = new Role { RoleId = UserRoleConstants.Admin, Name = "administrator" };
         var user = new User
         {
             Id = 1,
@@ -86,7 +86,7 @@ public class UserTests
             Password = "password123",
             UserRoles =
             [
-                new UserRole { UserId = 1, RoleId = (int)UserRoleConstants.Admin, Role = role }
+                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
             ]
         };
         Assert.That(user.IsAdministrator(), Is.True);

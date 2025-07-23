@@ -68,11 +68,12 @@ public class UsersControllerTests
 
         _dbContext = new AppDbContext(options);
 
-        // Add roles
-        _adminRole = new Role { Id = (int)UserRoleConstants.Admin, Name = "Администратор" };
-        _operatorRole = new Role { Id = (int)UserRoleConstants.Operator, Name = "Оператор" };
-        _customerRole = new Role { Id = (int)UserRoleConstants.Customer, Name = "Клиент" };
+        // Add roles - only set RoleId, let database handle Id
+        _adminRole = new Role { RoleId = UserRoleConstants.Admin, Name = "Администратор" };
+        _operatorRole = new Role { RoleId = UserRoleConstants.Operator, Name = "Оператор" };
+        _customerRole = new Role { RoleId = UserRoleConstants.Customer, Name = "Клиент" };
         _dbContext.Roles.AddRange(_adminRole, _operatorRole, _customerRole);
+        _dbContext.SaveChanges(); // Save roles first to get their generated Ids
 
         // Setup users with hashed passwords
         string hashedPassword = BCrypt.Net.BCrypt.HashPassword("password123");
@@ -87,11 +88,11 @@ public class UsersControllerTests
             Patronymic = "",
             UserRoles =
             [
-                new UserRole { UserId = 1, RoleId = (int)UserRoleConstants.Admin, Role = _adminRole }
+                new UserRole { UserId = 1, RoleId = _adminRole.Id, Role = _adminRole }
             ]
         };
 
-        _customerUser = new User
+        _operatorUser = new User
         {
             Id = 2,
             Email = "operator@example.com",
@@ -101,12 +102,11 @@ public class UsersControllerTests
             Patronymic = "",
             UserRoles =
             [
-                new UserRole { UserId = 2, RoleId = (int)UserRoleConstants.Operator, Role = _operatorRole }
+                new UserRole { UserId = 2, RoleId = _operatorRole.Id, Role = _operatorRole }
             ]
         };
 
-
-        _operatorUser = new User
+        _customerUser = new User
         {
             Id = 3,
             Email = "customer@example.com",
@@ -116,7 +116,7 @@ public class UsersControllerTests
             Patronymic = "",
             UserRoles =
             [
-                new UserRole { UserId = 3, RoleId = (int)UserRoleConstants.Customer, Role = _customerRole }
+                new UserRole { UserId = 3, RoleId = _customerRole.Id, Role = _customerRole }
             ]
         };
 
@@ -142,7 +142,7 @@ public class UsersControllerTests
     {
         // Arrange
         SetCurrentUserId(1); // Admin user
-        _dbContext.Users.AddRange(_adminUser, _customerUser);
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
         // Act
@@ -159,8 +159,8 @@ public class UsersControllerTests
     public async Task GetUsers_ReturnsForbidden_WhenUserIsNotAdmin()
     {
         // Arrange
-        SetCurrentUserId(2); // Regular user
-        _dbContext.Users.AddRange(_adminUser, _customerUser);
+        SetCurrentUserId(2); // Operator user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
         // Act
@@ -182,11 +182,11 @@ public class UsersControllerTests
     {
         // Arrange
         SetCurrentUserId(1); // Admin user
-        _dbContext.Users.AddRange(_adminUser, _customerUser, _operatorUser);
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
 
         // Act
-        var result = await _controller.GetUser(3); // Getting regular user
+        var result = await _controller.GetUser(3); // Getting customer user
 
         // Assert
         Assert.That(result.Value, Is.Not.Null);
@@ -200,8 +200,8 @@ public class UsersControllerTests
     public async Task GetUser_ReturnsUser_WhenUserAccessesSelf()
     {
         // Arrange
-        SetCurrentUserId(2); // Regular user
-        _dbContext.Users.AddRange(_adminUser, _customerUser, _operatorUser);
+        SetCurrentUserId(2); // Operator user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
 
         // Act
@@ -219,8 +219,8 @@ public class UsersControllerTests
     public async Task GetUser_ReturnsForbidden_WhenNonAdminAccessesOtherUser()
     {
         // Arrange
-        SetCurrentUserId(2); // Regular user
-        _dbContext.Users.AddRange(_adminUser, _customerUser, _operatorUser);
+        SetCurrentUserId(2); // Operator user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
 
         // Act
@@ -238,7 +238,7 @@ public class UsersControllerTests
     {
         // Arrange
         SetCurrentUserId(1); // Admin user
-        _dbContext.Users.AddRange(_adminUser, _customerUser, _operatorUser);
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
 
         // Act
@@ -298,8 +298,8 @@ public class UsersControllerTests
     public async Task PostUser_ReturnsForbidden_WhenUserIsNotAdmin()
     {
         // Arrange
-        SetCurrentUserId(2); // Regular user
-        _dbContext.Users.AddRange(_adminUser, _customerUser, _operatorUser);
+        SetCurrentUserId(2); // Operator user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
 
         var newUser = new UserCreateItem
@@ -325,7 +325,7 @@ public class UsersControllerTests
     {
         // Arrange
         SetCurrentUserId(1); // Admin user
-        _dbContext.Users.AddRange(_adminUser, _customerUser, _operatorUser);
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
 
         var newUser = new UserCreateItem
@@ -355,7 +355,7 @@ public class UsersControllerTests
     {
         // Arrange
         SetCurrentUserId(1); // Admin user
-        _dbContext.Users.AddRange(_adminUser, _customerUser);
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
         var updateItem = new UserUpdateItem
@@ -390,8 +390,8 @@ public class UsersControllerTests
     public async Task PutUser_UpdatesOwnData_WhenNotAdmin()
     {
         // Arrange
-        SetCurrentUserId(2); // Regular user
-        _dbContext.Users.AddRange(_adminUser, _customerUser);
+        SetCurrentUserId(2); // Operator user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
         var updateItem = new UserUpdateItem
@@ -418,8 +418,8 @@ public class UsersControllerTests
     public async Task PutUser_ReturnsForbidden_WhenNonAdminUpdatesOtherUser()
     {
         // Arrange
-        SetCurrentUserId(2); // Regular user
-        _dbContext.Users.AddRange(_adminUser, _customerUser);
+        SetCurrentUserId(2); // Operator user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
         var updateItem = new UserUpdateItem
@@ -442,7 +442,7 @@ public class UsersControllerTests
     {
         // Arrange
         SetCurrentUserId(1); // Admin user
-        _dbContext.Users.AddRange(_adminUser, _customerUser);
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
         var updateItem = new UserUpdateItem
@@ -465,7 +465,7 @@ public class UsersControllerTests
     {
         // Arrange
         SetCurrentUserId(1); // Admin user
-        _dbContext.Users.AddRange(_adminUser, _customerUser);
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
         var updateItem = new UserUpdateItem
@@ -487,7 +487,7 @@ public class UsersControllerTests
     {
         // Arrange
         SetCurrentUserId(1); // Admin user
-        _dbContext.Users.AddRange(_adminUser, _customerUser);
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
         var updateItem = new UserUpdateItem
@@ -511,8 +511,8 @@ public class UsersControllerTests
     public async Task PutUser_RequiresAdmin_WhenChangingAdminRole()
     {
         // Arrange
-        SetCurrentUserId(2); // Regular user
-        _dbContext.Users.AddRange(_adminUser, _customerUser);
+        SetCurrentUserId(2); // Operator user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
         var updateItem = new UserUpdateItem
@@ -557,8 +557,8 @@ public class UsersControllerTests
     public async Task DeleteUser_ReturnsForbidden_WhenUserIsNotAdmin()
     {
         // Arrange
-        SetCurrentUserId(2); // Regular user
-        _dbContext.Users.AddRange(_adminUser, _customerUser);
+        SetCurrentUserId(2); // Operator user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
         // Act
@@ -575,7 +575,7 @@ public class UsersControllerTests
     {
         // Arrange
         SetCurrentUserId(1); // Admin user
-        _dbContext.Users.AddRange(_adminUser, _customerUser);
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
         await _dbContext.SaveChangesAsync();
 
         // Act

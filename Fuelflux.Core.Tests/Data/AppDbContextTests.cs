@@ -45,9 +45,9 @@ public class AppDbContextTests
 
         // Pre-seed the roles that are needed for tests
         context.Roles.AddRange(
-            new Role { Id = (int)UserRoleConstants.Customer, Name = "Клиент" },
-            new Role { Id = (int)UserRoleConstants.Operator, Name = "Оператор АЗС" },
-            new Role { Id = (int)UserRoleConstants.Admin, Name = "Администратор системы" }
+            new Role { RoleId = UserRoleConstants.Customer, Name = "Клиент" },
+            new Role { RoleId = UserRoleConstants.Operator, Name = "Оператор АЗС" },
+            new Role { RoleId = UserRoleConstants.Admin, Name = "Администратор системы" }
         );
 
         context.SaveChanges();
@@ -57,12 +57,12 @@ public class AppDbContextTests
 
     private static Role GetAdminRole(AppDbContext ctx)
     {
-        return ctx.Roles.Single(r => r.Id == (int)UserRoleConstants.Admin);
+        return ctx.Roles.Single(r => r.RoleId == UserRoleConstants.Admin);
     }
 
     private static Role GetOperatorRole(AppDbContext ctx)
     {
-        return ctx.Roles.Single(r => r.Id == (int)UserRoleConstants.Operator);
+        return ctx.Roles.Single(r => r.RoleId == UserRoleConstants.Operator);
     }
 
     private static User CreateUser(int id, string email, string password, string firstName, string lastName, string? patronymic, IEnumerable<Role> roles)
@@ -133,7 +133,7 @@ public class AppDbContextTests
         // Arrange
         using var ctx = CreateContext();
 
-        var user = CreateUser(11, "logist@test.com", "password", "Logist", "User", null, [GetOperatorRole(ctx)]);
+        var user = CreateUser(11, "operator@test.com", "password", "Operator", "User", null, [GetOperatorRole(ctx)]);
         ctx.Users.Add(user);
         await ctx.SaveChangesAsync();
 
@@ -175,13 +175,13 @@ public class AppDbContextTests
 
     #endregion
 
-    #region CheckLogist Tests
+    #region CheckOperator Tests
 
     [Test]
-    public async Task CheckLogist_ReturnsTrue_WhenUserIsLogist()
+    public async Task CheckOperator_ReturnsTrue_WhenUserIsOperator()
     {
         using var ctx = CreateContext();
-        var user = CreateUser(30, "operator@test.com", "password", "Log", "User", null, [GetOperatorRole(ctx)]);
+        var user = CreateUser(30, "operator@test.com", "password", "Operator", "User", null, [GetOperatorRole(ctx)]);
         ctx.Users.Add(user);
         await ctx.SaveChangesAsync();
 
@@ -191,10 +191,10 @@ public class AppDbContextTests
     }
 
     [Test]
-    public async Task CheckLogist_ReturnsFalse_WhenUserIsNotLogist()
+    public async Task CheckOperator_ReturnsFalse_WhenUserIsNotOperator()
     {
         using var ctx = CreateContext();
-        var user = CreateUser(31, "adminonly@test.com", "password", "Adm", "User", null, [GetAdminRole(ctx)]);
+        var user = CreateUser(31, "adminonly@test.com", "password", "Admin", "User", null, [GetAdminRole(ctx)]);
         ctx.Users.Add(user);
         await ctx.SaveChangesAsync();
 
@@ -204,7 +204,7 @@ public class AppDbContextTests
     }
 
     [Test]
-    public async Task CheckLogist_ReturnsFalse_WhenUserDoesNotExist()
+    public async Task CheckOperator_ReturnsFalse_WhenUserDoesNotExist()
     {
         using var ctx = CreateContext();
 
@@ -214,7 +214,7 @@ public class AppDbContextTests
     }
 
     [Test]
-    public async Task CheckLogist_ReturnsFalse_WhenUserHasNoRoles()
+    public async Task CheckOperator_ReturnsFalse_WhenUserHasNoRoles()
     {
         using var ctx = CreateContext();
         var user = CreateUser(32, "noroleoperator@test.com", "password", "No", "Role", null, []);
@@ -277,7 +277,7 @@ public class AppDbContextTests
     {
         // Arrange
         using var ctx = CreateContext();
-        var user = CreateUser(21, "logist2@test.com", "password", "Logist", "Two", null, [GetOperatorRole(ctx)]);
+        var user = CreateUser(21, "operator2@test.com", "password", "Operator", "Two", null, [GetOperatorRole(ctx)]);
         ctx.Users.Add(user);
         await ctx.SaveChangesAsync();
 
