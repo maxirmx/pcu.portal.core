@@ -14,7 +14,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution 
 EndProject
 Project("{E53339B2-1760-4266-BCC7-CA923CBCF16C}") = "docker-compose", "docker-compose.dcproj", "{81DDED9D-158B-E303-5F62-77A2896D2A5A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fluelflux.Core.Tests", "Fuelflux.Core.Tests\Fluelflux.Core.Tests.csproj", "{E1002772-D124-D099-9D43-96C65AF03488}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Fuelflux.Core.Tests", "Fuelflux.Core.Tests\Fuelflux.Core.Tests.csproj", "{BDD20CA5-96AB-FDF3-4AEA-885F3ADDC1B7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -30,10 +30,10 @@ Global
 		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{81DDED9D-158B-E303-5F62-77A2896D2A5A}.Release|Any CPU.Build.0 = Release|Any CPU
-		{E1002772-D124-D099-9D43-96C65AF03488}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{E1002772-D124-D099-9D43-96C65AF03488}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{E1002772-D124-D099-9D43-96C65AF03488}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{E1002772-D124-D099-9D43-96C65AF03488}.Release|Any CPU.Build.0 = Release|Any CPU
+		{BDD20CA5-96AB-FDF3-4AEA-885F3ADDC1B7}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{BDD20CA5-96AB-FDF3-4AEA-885F3ADDC1B7}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{BDD20CA5-96AB-FDF3-4AEA-885F3ADDC1B7}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{BDD20CA5-96AB-FDF3-4AEA-885F3ADDC1B7}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
