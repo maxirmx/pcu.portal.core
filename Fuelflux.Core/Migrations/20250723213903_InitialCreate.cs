@@ -19,6 +19,7 @@ namespace Fuelflux.Core.Migrations
                 {
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    role_id = table.Column<int>(type: "integer", nullable: false),
                     name = table.Column<string>(type: "text", nullable: false)
                 },
                 constraints: table =>
@@ -69,12 +70,12 @@ namespace Fuelflux.Core.Migrations
 
             migrationBuilder.InsertData(
                 table: "roles",
-                columns: new[] { "id", "name" },
+                columns: new[] { "id", "name", "role_id" },
                 values: new object[,]
                 {
-                    { 1, "Администратор системы" },
-                    { 2, "Оператор АЗС" },
-                    { 3, "Клиент" }
+                    { 1, "Администратор системы", 1 },
+                    { 2, "Оператор АЗС", 2 },
+                    { 3, "Клиент", 3 }
                 });
 
             migrationBuilder.InsertData(

@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Fuelflux.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250723115612_InitialCreate")]
+    [Migration("20250723213903_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -38,6 +38,10 @@ namespace Fuelflux.Core.Migrations
                         .HasColumnType("text")
                         .HasColumnName("name");
 
+                    b.Property<int>("RoleId")
+                        .HasColumnType("integer")
+                        .HasColumnName("role_id");
+
                     b.HasKey("Id");
 
                     b.ToTable("roles");
@@ -45,18 +49,21 @@ namespace Fuelflux.Core.Migrations
                     b.HasData(
                         new
                         {
-                            Id = 3,
-                            Name = "Клиент"
+                            Id = 1,
+                            Name = "Администратор системы",
+                            RoleId = 1
                         },
                         new
                         {
                             Id = 2,
-                            Name = "Оператор АЗС"
+                            Name = "Оператор АЗС",
+                            RoleId = 2
                         },
                         new
                         {
-                            Id = 1,
-                            Name = "Администратор системы"
+                            Id = 3,
+                            Name = "Клиент",
+                            RoleId = 3
                         });
                 });
 
