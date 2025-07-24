@@ -134,13 +134,16 @@ public class DeviceAuthService : IDeviceAuthService
 
     public void RemoveExpiredTokens()
     {
-        foreach (var kv in _sessions.ToArray())
+        lock (_sessionLock)
         {
-            if (kv.Value <= DateTime.UtcNow)
+            foreach (var kv in _sessions.ToArray())
             {
-                _sessions.TryRemove(kv.Key, out _);
-                var tokenPrefix = GetSafeTokenIdentifier(kv.Key);
-                _logger.LogDebug("Token {tokenPrefix} expired and removed", tokenPrefix);
+                if (kv.Value <= DateTime.UtcNow)
+                {
+                    _sessions.TryRemove(kv.Key, out _);
+                    var tokenPrefix = GetSafeTokenIdentifier(kv.Key);
+                    _logger.LogDebug("Token {tokenPrefix} expired and removed", tokenPrefix);
+                }
             }
         }
     }
