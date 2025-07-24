@@ -131,7 +131,7 @@ public class UsersController(
             Email = user.Email,
             Password = hashToStoreInDb,
             Allowance = user.HasRole(UserRoleConstants.Customer) ? user.Allowance : null,
-            Uid = user.HasRole(UserRoleConstants.Customer) ? user.Uid : null
+            Uid = user.HasRole(UserRoleConstants.Customer) || user.HasRole(UserRoleConstants.Operator) ? user.Uid : null
         };
 
         _db.Users.Add(ur);
@@ -206,15 +206,27 @@ public class UsersController(
             ? update.Roles.Contains(UserRoleConstants.Customer)
             : user.HasRole(UserRoleConstants.Customer);
 
+        bool hasUidAccess = update.Roles != null
+            ? update.Roles.Contains(UserRoleConstants.Customer) || update.Roles.Contains(UserRoleConstants.Operator)
+            : user.HasUidAccess();
+
         if (isCustomer)
         {
             user.Allowance = update.Allowance;
+        }
+        else
+        {
+            // Clear allowance for non-customers
+            user.Allowance = null;
+        }
+
+        if (hasUidAccess)
+        {
             user.Uid = update.Uid;
         }
         else
         {
-            // Clear allowance and uid for non-customers
-            user.Allowance = null;
+            // Clear uid for non-customers and non-operators
             user.Uid = null;
         }
 

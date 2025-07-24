@@ -42,7 +42,7 @@ public class UserViewItem(User user)
     public decimal? Allowance { get; set; } =
         user.HasRole(UserRoleConstants.Customer) ? user.Allowance : null;
     public string? Uid { get; set; } =
-        user.HasRole(UserRoleConstants.Customer) ? user.Uid : null;
+        user.HasUidAccess() ? user.Uid : null;
     public override string ToString()
     {
         return JsonSerializer.Serialize(this, JOptions.DefaultOptions);

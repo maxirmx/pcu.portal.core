@@ -65,6 +65,8 @@ namespace Fuelflux.Core.Models
 
         public bool IsAdministrator() => HasRole(UserRoleConstants.Admin);
         public bool IsOperator() => HasRole(UserRoleConstants.Operator);
+        public bool IsCustomer() => HasRole(UserRoleConstants.Customer);
+        public bool HasUidAccess() => IsCustomer() || IsOperator();
 
     }
 }
