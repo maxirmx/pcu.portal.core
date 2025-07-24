@@ -31,12 +31,14 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Text;
 using Microsoft.Extensions.Options;
 using Fuelflux.Core.Settings;
+using Fuelflux.Core.Models;
 
 namespace Fuelflux.Core.Services;
 
 public class DeviceAuthService : IDeviceAuthService
 {
-    private readonly ConcurrentDictionary<string, DateTime> _sessions = new();
+    private record DeviceSession(DateTime Expires, PumpController PumpController, User User);
+    private readonly ConcurrentDictionary<string, DeviceSession> _sessions = new();
     private readonly DeviceAuthSettings _settings;
     private readonly AppSettings _appSettings;
     private readonly ILogger<DeviceAuthService> _logger;
@@ -57,7 +59,7 @@ public class DeviceAuthService : IDeviceAuthService
         }
     }
 
-    public string Authorize()
+    public string Authorize(PumpController pump, User user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = SHA256.HashData(Encoding.UTF8.GetBytes(_appSettings.Secret!));
@@ -79,7 +81,7 @@ public class DeviceAuthService : IDeviceAuthService
         var token = tokenHandler.CreateToken(descriptor);
         var tokenString = tokenHandler.WriteToken(token);
 
-        _sessions[tokenString] = expires;
+        _sessions[tokenString] = new DeviceSession(expires, pump, user);
 
         var tokenPrefix = GetSafeTokenIdentifier(tokenString);
         _logger.LogDebug("Token {tokenPrefix} authorized until {expires}", tokenPrefix, expires);
@@ -88,7 +90,7 @@ public class DeviceAuthService : IDeviceAuthService
 
     public bool Validate(string token)
     {
-        if (!_sessions.TryGetValue(token, out var expires))
+        if (!_sessions.TryGetValue(token, out var session))
         {
             return false;
         }
@@ -106,7 +108,7 @@ public class DeviceAuthService : IDeviceAuthService
                 ClockSkew = TimeSpan.Zero
             }, out _);
 
-            if (DateTime.UtcNow >= expires)
+            if (DateTime.UtcNow >= session.Expires)
             {
                 _sessions.TryRemove(token, out _);
                 var tokenPrefix = GetSafeTokenIdentifier(token);
@@ -138,10 +140,10 @@ public class DeviceAuthService : IDeviceAuthService
 
         foreach (var kv in _sessions)
         {
-            if (kv.Value <= now)
+            if (kv.Value.Expires <= now)
             {
                 // Try to remove - handle race conditions gracefully
-                if (_sessions.TryRemove(kv.Key, out var removedExpiry) && removedExpiry <= now)
+                if (_sessions.TryRemove(kv.Key, out var removedSession) && removedSession.Expires <= now)
                 {
                     var tokenPrefix = GetSafeTokenIdentifier(kv.Key);
                     _logger.LogDebug("Token {tokenPrefix} expired and removed", tokenPrefix);
