@@ -1,10 +1,36 @@
+// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
+// All rights reserved.
+// This file is a part of Fuelflux Core application
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+// TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS
+// BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
+
 using System;
 using Microsoft.AspNetCore.Http;
-using Fuelflux.Core.Controllers;
 using Microsoft.AspNetCore.Mvc;
 using Fuelflux.Core.RestModels;
 using Fuelflux.Core.Services;
 using Fuelflux.Core.Settings;
+using Fuelflux.Core.Controllers;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
@@ -84,18 +110,28 @@ public class PumpControllerTests
     [Test]
     public async Task Deauthorize_RemovesToken()
     {
+        // Arrange - Create a real token
         var token = _service.Authorize(_pump, _user);
+        
+        // Set up HTTP context with the Authorization header
         _controller.ControllerContext = new ControllerContext
         {
             HttpContext = new DefaultHttpContext()
         };
         _controller.ControllerContext.HttpContext.Request.Headers["Authorization"] = $"Bearer {token}";
 
-        var res = _controller.Deauthorize();
+        // Simulate what the JWT middleware would do - populate the context
+        // In real app, this happens automatically in the middleware pipeline
+        _controller.ControllerContext.HttpContext.Items["Token"] = token;
+        _controller.ControllerContext.HttpContext.Items["TokenType"] = "Device";
+        _controller.ControllerContext.HttpContext.Items["IsDeviceAuthorized"] = true;
 
+        // Act - Call the controller action
+        var res = _controller.Deauthorize();
         await Task.Delay(1);
 
-        Assert.That(res, Is.TypeOf<OkResult>());
+        // Assert
+        Assert.That(res, Is.TypeOf<NoContentResult>());
         Assert.That(_service.Validate(token), Is.False);
     }
 

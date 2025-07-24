@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
+// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
 // All rights reserved.
 // This file is a part of Fuelflux Core application
 //
@@ -46,6 +46,7 @@ using Fuelflux.Core.RestModels;
 using System.Threading.Tasks;
 using System;
 using System.Linq;
+using Fuelflux.Core.Services;
 
 namespace Fuelflux.Core.Tests.Authorization;
 
@@ -71,7 +72,7 @@ public class AuthorizeAttributeTests
         var mockLogger = new Mock<ILogger<AuthorizeAttribute>>();
         mockServiceProvider
             .Setup(x => x.GetService(typeof(ILogger<AuthorizeAttribute>)))
-            .Returns(mockLogger.Object);
+            .Returns((object?)mockLogger.Object);
 
         httpContext.Setup(h => h.RequestServices).Returns(mockServiceProvider.Object);
 
@@ -93,7 +94,6 @@ public class AuthorizeAttributeTests
         // Arrange
         var items = new Dictionary<object, object?>();
         var context = CreateContext(items, allowAnonymous: true);
-        // Update the instantiation of AuthorizeAttribute to include the required parameter 'authorizationType'
         var attribute = new AuthorizeAttribute(AuthorizationType.User);
 
         // Act
@@ -104,7 +104,25 @@ public class AuthorizeAttributeTests
     }
 
     [Test]
-    public void OnAuthorization_ReturnsUnauthorized_WhenUserIdIsNull()
+    public void OnAuthorization_AllowsAccess_WhenUserIdExists_AndUserAuthorizationRequired()
+    {
+        // Arrange
+        var items = new Dictionary<object, object?>
+        {
+            ["UserId"] = 1
+        };
+        var context = CreateContext(items);
+        var attribute = new AuthorizeAttribute(AuthorizationType.User);
+
+        // Act
+        attribute.OnAuthorization(context);
+
+        // Assert
+        Assert.That(context.Result, Is.Null);
+    }
+
+    [Test]
+    public void OnAuthorization_ReturnsUnauthorized_WhenUserIdIsNull_AndUserAuthorizationRequired()
     {
         // Arrange
         var items = new Dictionary<object, object?>();
@@ -124,12 +142,72 @@ public class AuthorizeAttributeTests
     }
 
     [Test]
-    public void OnAuthorization_AllowsAccess_WhenUserIdExists()
+    public void OnAuthorization_AllowsAccess_WhenDeviceIsAuthorized_AndDeviceAuthorizationRequired()
+    {
+        // Arrange
+        var items = new Dictionary<object, object?>
+        {
+            ["IsDeviceAuthorized"] = true
+        };
+        var context = CreateContext(items);
+        var attribute = new AuthorizeAttribute(AuthorizationType.Device);
+
+        // Act
+        attribute.OnAuthorization(context);
+
+        // Assert
+        Assert.That(context.Result, Is.Null);
+    }
+
+    [Test]
+    public void OnAuthorization_ReturnsUnauthorized_WhenDeviceIsNotAuthorized_AndDeviceAuthorizationRequired()
+    {
+        // Arrange
+        var items = new Dictionary<object, object?>
+        {
+            ["IsDeviceAuthorized"] = false
+        };
+        var context = CreateContext(items);
+        var attribute = new AuthorizeAttribute(AuthorizationType.Device);
+
+        // Act
+        attribute.OnAuthorization(context);
+
+        // Assert
+        Assert.That(context.Result, Is.Not.Null);
+        Assert.That(context.Result, Is.TypeOf<JsonResult>());
+        var jsonResult = context.Result as JsonResult;
+        Assert.That(jsonResult!.StatusCode, Is.EqualTo(StatusCodes.Status401Unauthorized));
+    }
+
+    [Test]
+    public void OnAuthorization_ReturnsUnauthorized_WhenUserIsAuthenticated_ButDeviceAuthorizationRequired()
     {
         // Arrange
         var items = new Dictionary<object, object?>
         {
             ["UserId"] = 1
+        };
+        var context = CreateContext(items);
+        var attribute = new AuthorizeAttribute(AuthorizationType.Device);
+
+        // Act
+        attribute.OnAuthorization(context);
+
+        // Assert
+        Assert.That(context.Result, Is.Not.Null);
+        Assert.That(context.Result, Is.TypeOf<JsonResult>());
+        var jsonResult = context.Result as JsonResult;
+        Assert.That(jsonResult!.StatusCode, Is.EqualTo(StatusCodes.Status401Unauthorized));
+    }
+
+    [Test]
+    public void OnAuthorization_ReturnsUnauthorized_WhenDeviceIsAuthenticated_ButUserAuthorizationRequired()
+    {
+        // Arrange
+        var items = new Dictionary<object, object?>
+        {
+            ["IsDeviceAuthorized"] = true
         };
         var context = CreateContext(items);
         var attribute = new AuthorizeAttribute(AuthorizationType.User);
@@ -138,7 +216,10 @@ public class AuthorizeAttributeTests
         attribute.OnAuthorization(context);
 
         // Assert
-        Assert.That(context.Result, Is.Null);
+        Assert.That(context.Result, Is.Not.Null);
+        Assert.That(context.Result, Is.TypeOf<JsonResult>());
+        var jsonResult = context.Result as JsonResult;
+        Assert.That(jsonResult!.StatusCode, Is.EqualTo(StatusCodes.Status401Unauthorized));
     }
 }
 
@@ -295,57 +376,51 @@ public class JwtUtilsTests
 public class JwtMiddlewareTests
 {
     [Test]
-    public async Task Invoke_SetsUserIdInContext_WhenTokenIsValid()
+    public async Task Invoke_SetsUserIdInContext_WhenUserTokenIsValid()
     {
         // Arrange
         var userId = 123;
         var context = new DefaultHttpContext();
-        context.Request.Headers["Authorization"] = "Bearer validToken";
+        context.Request.Headers["Authorization"] = "Bearer validUserToken";
 
         var mockJwtUtils = new Mock<IJwtUtils>();
-        mockJwtUtils.Setup(x => x.ValidateJwtToken("validToken")).Returns(userId);
+        mockJwtUtils.Setup(x => x.ValidateJwtToken("validUserToken")).Returns(userId);
 
+        var mockDeviceAuthService = new Mock<IDeviceAuthService>();
         var middleware = new JwtMiddleware(innerContext => Task.CompletedTask);
 
         // Act
-        await middleware.Invoke(context, mockJwtUtils.Object);
+        await middleware.Invoke(context, mockJwtUtils.Object, mockDeviceAuthService.Object);
 
         // Assert
         Assert.That(context.Items["UserId"], Is.EqualTo(userId));
+        Assert.That(context.Items["TokenType"], Is.EqualTo("User"));
+        Assert.That(context.Items["Token"], Is.EqualTo("validUserToken"));
+        Assert.That(context.Items.ContainsKey("IsDeviceAuthorized"), Is.False);
     }
 
     [Test]
-    public async Task Invoke_DoesNotSetUserId_WhenTokenIsInvalid()
+    public async Task Invoke_SetsDeviceAuthInContext_WhenDeviceTokenIsValid()
     {
         // Arrange
         var context = new DefaultHttpContext();
-        context.Request.Headers["Authorization"] = "Bearer invalidToken";
+        context.Request.Headers["Authorization"] = "Bearer validDeviceToken";
 
         var mockJwtUtils = new Mock<IJwtUtils>();
-        mockJwtUtils.Setup(x => x.ValidateJwtToken("invalidToken")).Returns((int?)null);
+        mockJwtUtils.Setup(x => x.ValidateJwtToken("validDeviceToken")).Returns((int?)null);
+
+        var mockDeviceAuthService = new Mock<IDeviceAuthService>();
+        mockDeviceAuthService.Setup(x => x.Validate("validDeviceToken")).Returns(true);
 
         var middleware = new JwtMiddleware(innerContext => Task.CompletedTask);
 
         // Act
-        await middleware.Invoke(context, mockJwtUtils.Object);
+        await middleware.Invoke(context, mockJwtUtils.Object, mockDeviceAuthService.Object);
 
         // Assert
-        Assert.That(context.Items.ContainsKey("UserId"), Is.False);
-    }
-
-    [Test]
-    public async Task Invoke_DoesNotSetUserId_WhenNoAuthorizationHeader()
-    {
-        // Arrange
-        var context = new DefaultHttpContext();
-
-        var mockJwtUtils = new Mock<IJwtUtils>();
-        var middleware = new JwtMiddleware(innerContext => Task.CompletedTask);
-
-        // Act
-        await middleware.Invoke(context, mockJwtUtils.Object);
-
-        // Assert
+        Assert.That(context.Items["TokenType"], Is.EqualTo("Device"));
+        Assert.That(context.Items["IsDeviceAuthorized"], Is.EqualTo(true));
+        Assert.That(context.Items["Token"], Is.EqualTo("validDeviceToken"));
         Assert.That(context.Items.ContainsKey("UserId"), Is.False);
     }
 
@@ -357,7 +432,9 @@ public class JwtMiddlewareTests
         var nextDelegateCalled = false;
 
         var mockJwtUtils = new Mock<IJwtUtils>();
-        var nextDelegate = new RequestDelegate(_ => {
+        var mockDeviceAuthService = new Mock<IDeviceAuthService>();
+        var nextDelegate = new RequestDelegate(_ =>
+        {
             nextDelegateCalled = true;
             return Task.CompletedTask;
         });
@@ -365,7 +442,7 @@ public class JwtMiddlewareTests
         var middleware = new JwtMiddleware(nextDelegate);
 
         // Act
-        await middleware.Invoke(context, mockJwtUtils.Object);
+        await middleware.Invoke(context, mockJwtUtils.Object, mockDeviceAuthService.Object);
 
         // Assert
         Assert.That(nextDelegateCalled, Is.True);
