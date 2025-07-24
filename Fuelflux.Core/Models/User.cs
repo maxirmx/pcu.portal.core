@@ -54,13 +54,16 @@ namespace Fuelflux.Core.Models
         [Column("uid")]
         public string? Uid { get; set; }
 
-        public virtual ICollection<UserRole> UserRoles { get; set; } = [];
+        [Column("role_id")]
+        public int RoleId { get; set; }
 
-        public bool HasAnyRole() => UserRoles.Count != 0;
+        public virtual Role Role { get; set; } = null!;
+
+        public bool HasAnyRole() => Role != null;
 
         public bool HasRole(UserRoleConstants role)
         {
-            return UserRoles.Any(ur => ur.Role!.RoleId == role);
+            return Role != null && Role.RoleId == role;
         }
 
         public bool IsAdministrator() => HasRole(UserRoleConstants.Admin);

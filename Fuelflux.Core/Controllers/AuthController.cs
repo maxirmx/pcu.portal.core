@@ -54,8 +54,7 @@ public class AuthController(
         _logger.LogDebug("Login attempt for {email}", crd.Email);
 
         User? user = await _db.Users
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
+            .Include(u => u.Role)
             .Where(u => u.Email.ToLower() == crd.Email.ToLower())
             .SingleOrDefaultAsync();
 

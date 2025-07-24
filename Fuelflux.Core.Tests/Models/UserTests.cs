@@ -46,7 +46,8 @@ public class UserTests
         {
             Email = "test@example.com",
             Password = "password123",
-            UserRoles = [new() { RoleId = role.Id, Role = role }]
+            RoleId = role.Id,
+            Role = role
         };
         Assert.That(user.HasAnyRole(), Is.True);
     }
@@ -60,10 +61,8 @@ public class UserTests
             Id = 1,
             Email = "test@example.com",
             Password = "password123",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
-            ]
+            RoleId = role.Id,
+            Role = role
         };
         Assert.That(user.HasRole(UserRoleConstants.Admin), Is.True);
     }
@@ -84,10 +83,8 @@ public class UserTests
             Id = 1,
             Email = "test@example.com",
             Password = "password123",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
-            ]
+            RoleId = role.Id,
+            Role = role
         };
         Assert.That(user.IsAdministrator(), Is.True);
     }
@@ -101,10 +98,8 @@ public class UserTests
             Id = 1,
             Email = "test@example.com",
             Password = "password123",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
-            ]
+            RoleId = role.Id,
+            Role = role
         };
         Assert.That(user.IsOperator(), Is.True);
     }
@@ -118,10 +113,8 @@ public class UserTests
             Id = 1,
             Email = "test@example.com",
             Password = "password123",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
-            ]
+            RoleId = role.Id,
+            Role = role
         };
         Assert.That(user.IsOperator(), Is.False);
     }
@@ -135,10 +128,8 @@ public class UserTests
             Id = 1,
             Email = "test@example.com",
             Password = "password123",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
-            ]
+            RoleId = role.Id,
+            Role = role
         };
         Assert.That(user.IsOperator(), Is.False);
     }
@@ -152,10 +143,8 @@ public class UserTests
             Id = 1,
             Email = "test@example.com",
             Password = "password123",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
-            ]
+            RoleId = role.Id,
+            Role = role
         };
         Assert.That(user.IsCustomer(), Is.True);
     }
@@ -169,10 +158,8 @@ public class UserTests
             Id = 1,
             Email = "test@example.com",
             Password = "password123",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
-            ]
+            RoleId = role.Id,
+            Role = role
         };
         Assert.That(user.IsCustomer(), Is.False);
     }
@@ -186,10 +173,8 @@ public class UserTests
             Id = 1,
             Email = "test@example.com",
             Password = "password123",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
-            ]
+            RoleId = role.Id,
+            Role = role
         };
         Assert.That(user.HasUidAccess(), Is.True);
     }
@@ -203,10 +188,8 @@ public class UserTests
             Id = 1,
             Email = "test@example.com",
             Password = "password123",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
-            ]
+            RoleId = role.Id,
+            Role = role
         };
         Assert.That(user.HasUidAccess(), Is.True);
     }
@@ -220,10 +203,8 @@ public class UserTests
             Id = 1,
             Email = "test@example.com",
             Password = "password123",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
-            ]
+            RoleId = role.Id,
+            Role = role
         };
         Assert.That(user.HasUidAccess(), Is.False);
     }
@@ -232,17 +213,13 @@ public class UserTests
     public void HasUidAccess_ReturnsTrue_WhenUserHasBothCustomerAndOperatorRoles()
     {
         var customerRole = new Role { Id = 3, RoleId = UserRoleConstants.Customer, Name = "customer" };
-        var operatorRole = new Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "operator" };
         var user = new User
         {
             Id = 1,
             Email = "test@example.com",
             Password = "password123",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = customerRole.Id, Role = customerRole },
-                new UserRole { UserId = 1, RoleId = operatorRole.Id, Role = operatorRole }
-            ]
+            RoleId = customerRole.Id,
+            Role = customerRole
         };
         Assert.That(user.HasUidAccess(), Is.True);
     }

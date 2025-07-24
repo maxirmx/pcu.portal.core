@@ -35,7 +35,6 @@ namespace Fuelflux.Core.Data
 
         public DbSet<User> Users => Set<User>();
         public DbSet<Role> Roles => Set<Role>();
-        public DbSet<UserRole> UserRoles => Set<UserRole>();
         public DbSet<FuelStation> FuelStations => Set<FuelStation>();
         public DbSet<FuelTank> FuelTanks => Set<FuelTank>();
         public DbSet<PumpController> PumpControllers => Set<PumpController>();
@@ -44,18 +43,10 @@ namespace Fuelflux.Core.Data
         {
             base.OnModelCreating(modelBuilder);
 
-            modelBuilder.Entity<UserRole>()
-                .HasKey(ur => new { ur.UserId, ur.RoleId });
-
-            modelBuilder.Entity<UserRole>()
-                .HasOne(ur => ur.User)
-                .WithMany(u => u.UserRoles)
-                .HasForeignKey(ur => ur.UserId);
-
-            modelBuilder.Entity<UserRole>()
-                .HasOne(ur => ur.Role)
-                .WithMany(r => r.UserRoles)
-                .HasForeignKey(ur => ur.RoleId);
+            modelBuilder.Entity<User>()
+                .HasOne(u => u.Role)
+                .WithMany(r => r.Users)
+                .HasForeignKey(u => u.RoleId);
 
             modelBuilder.Entity<Role>().HasData(
                 new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "Администратор системы" },
@@ -73,18 +64,14 @@ namespace Fuelflux.Core.Data
                     Email = "maxirmx@sw.consulting",
                     Password = "$2b$12$eOXzlwFzyGVERe0sNwFeJO5XnvwsjloUpL4o2AIQ8254RT88MnsDi",
                     Allowance = 0m,
-                    Uid = ""
+                    Uid = "",
+                    RoleId = 1
                 }
             );
 
             modelBuilder.Entity<User>()
                 .HasIndex(u => u.Uid);
 
-            modelBuilder.Entity<UserRole>().HasData(
-                new UserRole { UserId = 1, RoleId = 1 }, // Admin
-                new UserRole { UserId = 1, RoleId = 2 }, // Operator
-                new UserRole { UserId = 1, RoleId = 3 }  // Customer
-            );
 
             modelBuilder.Entity<FuelTank>()
                 .HasOne(ft => ft.FuelStation)

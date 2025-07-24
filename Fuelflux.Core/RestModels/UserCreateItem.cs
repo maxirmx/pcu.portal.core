@@ -36,14 +36,10 @@ public class UserCreateItem
     public string? Patronymic { get; set; }
     public string Email { get; set; } = "";
     public string Password { get; set; } = "";
-    public List<UserRoleConstants> Roles { get; set; } = [];
+    public UserRoleConstants Role { get; set; }
     public decimal? Allowance { get; set; }
     public string? Uid { get; set; }
     
-    public bool HasRole(UserRoleConstants roleConstant)
-    {
-        return Roles != null && Roles.Contains(roleConstant);
-    }
 
     public override string ToString()
     {
