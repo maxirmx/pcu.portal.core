@@ -92,8 +92,8 @@ namespace Fuelflux.Core.Data
                 .HasForeignKey(ft => ft.FuelStationId);
 
             modelBuilder.Entity<FuelTank>()
-                .HasIndex(ft => ft.Number);
-
+                .HasIndex(ft => new { ft.FuelStationId, ft.Number })
+                .IsUnique();
             modelBuilder.Entity<PumpController>()
                 .HasOne(pc => pc.FuelStation)
                 .WithMany(fs => fs.PumpControllers)
