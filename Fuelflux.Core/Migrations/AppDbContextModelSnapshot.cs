@@ -73,6 +73,10 @@ namespace Fuelflux.Core.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal?>("Allowance")
+                        .HasColumnType("numeric(5,2)")
+                        .HasColumnName("allowance");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("text")
@@ -98,7 +102,13 @@ namespace Fuelflux.Core.Migrations
                         .HasColumnType("text")
                         .HasColumnName("patronymic");
 
+                    b.Property<string>("Uid")
+                        .HasColumnType("text")
+                        .HasColumnName("uid");
+
                     b.HasKey("Id");
+
+                    b.HasIndex("Uid");
 
                     b.ToTable("users");
 
@@ -106,11 +116,13 @@ namespace Fuelflux.Core.Migrations
                         new
                         {
                             Id = 1,
+                            Allowance = 0m,
                             Email = "maxirmx@sw.consulting",
                             FirstName = "Maxim",
                             LastName = "Samsonov",
                             Password = "$2b$12$eOXzlwFzyGVERe0sNwFeJO5XnvwsjloUpL4o2AIQ8254RT88MnsDi",
-                            Patronymic = ""
+                            Patronymic = "",
+                            Uid = ""
                         });
                 });
 
