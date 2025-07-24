@@ -1,4 +1,5 @@
-﻿using Microsoft.EntityFrameworkCore.Migrations;
+﻿using System;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 
 #nullable disable
@@ -13,6 +14,19 @@ namespace Fuelflux.Core.Migrations
         /// <inheritdoc />
         protected override void Up(MigrationBuilder migrationBuilder)
         {
+            migrationBuilder.CreateTable(
+                name: "fuel_stations",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    name = table.Column<string>(type: "text", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_fuel_stations", x => x.id);
+                });
+
             migrationBuilder.CreateTable(
                 name: "roles",
                 columns: table => new
@@ -44,6 +58,46 @@ namespace Fuelflux.Core.Migrations
                 constraints: table =>
                 {
                     table.PrimaryKey("PK_users", x => x.id);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "fuel_tanks",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    number = table.Column<decimal>(type: "numeric(3,0)", nullable: false),
+                    fuel_station_id = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_fuel_tanks", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_fuel_tanks_fuel_stations_fuel_station_id",
+                        column: x => x.fuel_station_id,
+                        principalTable: "fuel_stations",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
+                });
+
+            migrationBuilder.CreateTable(
+                name: "pump_controllers",
+                columns: table => new
+                {
+                    id = table.Column<int>(type: "integer", nullable: false)
+                        .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
+                    guid = table.Column<Guid>(type: "uuid", nullable: false),
+                    fuel_station_id = table.Column<int>(type: "integer", nullable: false)
+                },
+                constraints: table =>
+                {
+                    table.PrimaryKey("PK_pump_controllers", x => x.id);
+                    table.ForeignKey(
+                        name: "FK_pump_controllers_fuel_stations_fuel_station_id",
+                        column: x => x.fuel_station_id,
+                        principalTable: "fuel_stations",
+                        principalColumn: "id",
+                        onDelete: ReferentialAction.Cascade);
                 });
 
             migrationBuilder.CreateTable(
@@ -96,6 +150,17 @@ namespace Fuelflux.Core.Migrations
                 });
 
             migrationBuilder.CreateIndex(
+                name: "IX_fuel_tanks_fuel_station_id_number",
+                table: "fuel_tanks",
+                columns: new[] { "fuel_station_id", "number" },
+                unique: true);
+
+            migrationBuilder.CreateIndex(
+                name: "IX_pump_controllers_fuel_station_id",
+                table: "pump_controllers",
+                column: "fuel_station_id");
+
+            migrationBuilder.CreateIndex(
                 name: "IX_user_roles_role_id",
                 table: "user_roles",
                 column: "role_id");
@@ -110,7 +175,16 @@ namespace Fuelflux.Core.Migrations
         protected override void Down(MigrationBuilder migrationBuilder)
         {
             migrationBuilder.DropTable(
+                name: "fuel_tanks");
+
+            migrationBuilder.DropTable(
+                name: "pump_controllers");
+
+            migrationBuilder.DropTable(
                 name: "user_roles");
+
+            migrationBuilder.DropTable(
+                name: "fuel_stations");
 
             migrationBuilder.DropTable(
                 name: "roles");

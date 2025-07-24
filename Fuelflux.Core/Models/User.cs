@@ -54,7 +54,7 @@ namespace Fuelflux.Core.Models
         [Column("uid")]
         public string? Uid { get; set; }
 
-        public ICollection<UserRole> UserRoles { get; set; } = [];
+        public virtual ICollection<UserRole> UserRoles { get; set; } = [];
 
         public bool HasAnyRole() => UserRoles.Count != 0;
 

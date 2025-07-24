@@ -13,5 +13,5 @@ public class FuelTank
 
     [Column("fuel_station_id")]
     public int FuelStationId { get; set; }
-    public FuelStation FuelStation { get; set; } = null!;
+    public virtual FuelStation FuelStation { get; set; } = null!;
 }

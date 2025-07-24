@@ -36,7 +36,7 @@ public class UserUpdateItem
     public string? Patronymic { get; set; }
     public string? Email { get; set; }
     public string? Password { get; set; }
-    public List<UserRoleConstants> Roles { get; set; } = [];
+    public virtual List<UserRoleConstants> Roles { get; set; } = [];
     public decimal? Allowance { get; set; }
     public string? Uid { get; set; }
     

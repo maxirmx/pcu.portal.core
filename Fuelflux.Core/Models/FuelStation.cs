@@ -11,6 +11,6 @@ public class FuelStation
     [Column("name")]
     public required string Name { get; set; }
 
-    public ICollection<FuelTank> FuelTanks { get; set; } = [];
-    public ICollection<PumpController> PumpControllers { get; set; } = [];
+    public virtual ICollection<FuelTank> FuelTanks { get; set; } = [];
+    public virtual ICollection<PumpController> PumpControllers { get; set; } = [];
 }
