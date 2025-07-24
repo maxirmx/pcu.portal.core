@@ -11,6 +11,8 @@ namespace Fuelflux.Core.Controllers;
 [ApiController]
 [Authorize(AuthorizationType.Device)]
 [Route("api/[controller]")]
+[ProducesResponseType(StatusCodes.Status401Unauthorized, Type = typeof(ErrMessage))]
+
 public class PumpController(IDeviceAuthService authService, AppDbContext db, ILogger<PumpController> logger) : ControllerBase
 {
     private readonly IDeviceAuthService _authService = authService;
@@ -20,7 +22,6 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
     [HttpPost("authorize")]
     [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TokenResponse))]
-    [ProducesResponseType(StatusCodes.Status401Unauthorized, Type = typeof(ErrMessage))]
     public async Task<ActionResult<TokenResponse>> Authorize(DeviceAuthorizeRequest request)
     {
         var pump = await _db.PumpControllers.AsNoTracking().FirstOrDefaultAsync(p => p.Uid == request.PumpControllerUid);
@@ -38,7 +39,6 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
     }
 
     [HttpPost("deauthorize")]
-    [AllowAnonymous]
     [ProducesResponseType(StatusCodes.Status200OK)]
     public IActionResult Deauthorize(TokenRequest request)
     {

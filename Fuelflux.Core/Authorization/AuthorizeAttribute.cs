@@ -26,7 +26,6 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-using Fuelflux.Core.Models;
 using Fuelflux.Core.RestModels;
 
 namespace Fuelflux.Core.Authorization;
