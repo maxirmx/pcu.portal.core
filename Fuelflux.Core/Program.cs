@@ -55,15 +55,13 @@ builder.Services
     .AddSingleton<IDeviceAuthService, DeviceAuthService>()
     .AddQuartz(q =>
     {
-        q.UseMicrosoftDependencyInjectionJobFactory();
-
         var jobKey = new JobKey("deviceTokenCleanup");
         q.AddJob<DeviceTokenCleanupJob>(opts => opts.WithIdentity(jobKey));
-
+        var sc = builder.Configuration.GetSection("DeviceAuth").GetValue<string>("CleanupCron", "0 0 0 * * ?") ?? "0 0 0 * * ?";
         q.AddTrigger(opts => opts
             .ForJob(jobKey)
             .WithIdentity("deviceTokenCleanup-trigger")
-            .WithCronSchedule(builder.Configuration.GetSection("DeviceAuth").GetValue<string>("CleanupCron", "0 0 0 * * ?")));
+            .WithCronSchedule(sc));
     })
     .AddQuartzHostedService(opt => opt.WaitForJobsToComplete = true)
     .AddHttpContextAccessor()
