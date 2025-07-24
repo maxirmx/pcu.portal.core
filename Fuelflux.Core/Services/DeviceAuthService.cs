@@ -24,7 +24,11 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 using System.Collections.Concurrent;
+using System.Security.Claims;
 using System.Security.Cryptography;
+using Microsoft.IdentityModel.Tokens;
+using System.IdentityModel.Tokens.Jwt;
+using System.Text;
 using Microsoft.Extensions.Options;
 using Fuelflux.Core.Settings;
 
@@ -34,47 +38,116 @@ public class DeviceAuthService : IDeviceAuthService
 {
     private readonly ConcurrentDictionary<string, DateTime> _sessions = new();
     private readonly DeviceAuthSettings _settings;
+    private readonly AppSettings _appSettings;
     private readonly ILogger<DeviceAuthService> _logger;
 
-    public DeviceAuthService(IOptions<DeviceAuthSettings> options, ILogger<DeviceAuthService> logger)
+    public DeviceAuthService(
+        IOptions<DeviceAuthSettings> deviceOptions,
+        IOptions<AppSettings> appOptions,
+        ILogger<DeviceAuthService> logger)
     {
-        _settings = options.Value;
+        _settings = deviceOptions.Value;
+        _appSettings = appOptions.Value;
         _logger = logger;
+
+        if (string.IsNullOrEmpty(_appSettings.Secret))
+        {
+            _logger.LogError("JWT secret not configured");
+            throw new Exception("JWT secret not configured");
+        }
     }
 
     public string Authorize()
     {
-        var token = Convert.ToHexString(RandomNumberGenerator.GetBytes(16));
-        var expires = DateTime.UtcNow.AddMinutes(_settings.SessionMinutes);
-        _sessions[token] = expires;
-        
-        var tokenPrefix = GetSafeTokenIdentifier(token);
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = SHA256.HashData(Encoding.UTF8.GetBytes(_appSettings.Secret!));
+
+        var now = DateTime.UtcNow;
+        var expires = now.AddMinutes(_settings.SessionMinutes);
+        var notBefore = expires <= now ? expires.AddSeconds(-1) : now;
+        var descriptor = new SecurityTokenDescriptor
+        {
+            Subject = new ClaimsIdentity(new[]
+            {
+                new Claim("typ", "device")
+            }),
+            Expires = expires,
+            NotBefore = notBefore,
+            SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+        };
+
+        var token = tokenHandler.CreateToken(descriptor);
+        var tokenString = tokenHandler.WriteToken(token);
+
+        _sessions[tokenString] = expires;
+
+        var tokenPrefix = GetSafeTokenIdentifier(tokenString);
         _logger.LogDebug("Token {tokenPrefix} authorized until {expires}", tokenPrefix, expires);
-        return token;
+        return tokenString;
     }
 
     public bool Validate(string token)
     {
-        if (_sessions.TryGetValue(token, out var expires))
+        if (!_sessions.TryGetValue(token, out var expires))
         {
-            if (DateTime.UtcNow < expires)
-            {
-                return true;
-            }
-            _sessions.TryRemove(token, out _);
-            
-            var tokenPrefix = GetSafeTokenIdentifier(token);
-            _logger.LogDebug("Token {tokenPrefix} expired", tokenPrefix);
+            return false;
         }
-        return false;
+
+        var tokenHandler = new JwtSecurityTokenHandler();
+        var key = SHA256.HashData(Encoding.UTF8.GetBytes(_appSettings.Secret!));
+        try
+        {
+            tokenHandler.ValidateToken(token, new TokenValidationParameters
+            {
+                ValidateIssuerSigningKey = true,
+                IssuerSigningKey = new SymmetricSecurityKey(key),
+                ValidateIssuer = false,
+                ValidateAudience = false,
+                ClockSkew = TimeSpan.Zero
+            }, out _);
+
+            if (DateTime.UtcNow >= expires)
+            {
+                _sessions.TryRemove(token, out _);
+                var tokenPrefix = GetSafeTokenIdentifier(token);
+                _logger.LogDebug("Token {tokenPrefix} expired", tokenPrefix);
+                return false;
+            }
+
+            return true;
+        }
+        catch (SecurityTokenException ex)
+        {
+            _logger.LogWarning(ex, "Invalid device token");
+            _sessions.TryRemove(token, out _);
+            return false;
+        }
     }
 
     public void Deauthorize(string token)
     {
         _sessions.TryRemove(token, out _);
-        
+
         var tokenPrefix = GetSafeTokenIdentifier(token);
         _logger.LogDebug("Token {tokenPrefix} deauthorized", tokenPrefix);
+    }
+
+    public void RemoveExpiredTokens()
+    {
+        var now = DateTime.UtcNow;
+
+        foreach (var kv in _sessions)
+        {
+            if (kv.Value <= now)
+            {
+                // Try to remove - handle race conditions gracefully
+                if (_sessions.TryRemove(kv.Key, out var removedExpiry) && removedExpiry <= now)
+                {
+                    var tokenPrefix = GetSafeTokenIdentifier(kv.Key);
+                    _logger.LogDebug("Token {tokenPrefix} expired and removed", tokenPrefix);
+                }
+            }
+        }
     }
 
     private static string GetSafeTokenIdentifier(string token)

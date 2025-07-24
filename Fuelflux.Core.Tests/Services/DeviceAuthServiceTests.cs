@@ -15,8 +15,9 @@ public class DeviceAuthServiceTests
     public void Setup()
     {
         var opts = Options.Create(new DeviceAuthSettings { SessionMinutes = 1 });
+        var appOpts = Options.Create(new AppSettings { Secret = "secret" });
         var logger = new LoggerFactory().CreateLogger<DeviceAuthService>();
-        _service = new DeviceAuthService(opts, logger);
+        _service = new DeviceAuthService(opts, appOpts, logger);
     }
 
     [Test]
@@ -37,9 +38,10 @@ public class DeviceAuthServiceTests
     [Test]
     public void Validate_ReturnsFalse_WhenExpired()
     {
-        var opts = Options.Create(new DeviceAuthSettings { SessionMinutes = -1 });
+        var opts = Options.Create(new DeviceAuthSettings { SessionMinutes = 0 });
+        var appOpts = Options.Create(new AppSettings { Secret = "secret" });
         var logger = new LoggerFactory().CreateLogger<DeviceAuthService>();
-        var svc = new DeviceAuthService(opts, logger);
+        var svc = new DeviceAuthService(opts, appOpts, logger);
         var token = svc.Authorize();
         Assert.That(svc.Validate(token), Is.False);
     }
