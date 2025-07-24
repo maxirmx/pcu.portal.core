@@ -85,7 +85,13 @@ public class PumpControllerTests
     public async Task Deauthorize_RemovesToken()
     {
         var token = _service.Authorize(_pump, _user);
-        var res = _controller.Deauthorize(new TokenRequest { Token = token });
+        _controller.ControllerContext = new ControllerContext
+        {
+            HttpContext = new DefaultHttpContext()
+        };
+        _controller.ControllerContext.HttpContext.Request.Headers["Authorization"] = $"Bearer {token}";
+
+        var res = _controller.Deauthorize();
 
         await Task.Delay(1);
 
