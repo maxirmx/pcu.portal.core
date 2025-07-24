@@ -44,6 +44,4 @@ public class UserUpdateItem
     {
         return JsonSerializer.Serialize(this, JOptions.DefaultOptions);
     }
-    
-    public bool IsAdministrator() => Role == UserRoleConstants.Admin;
 }
