@@ -68,9 +68,14 @@ namespace Fuelflux.Core.Data
                     LastName = "Samsonov",
                     Patronymic = "",
                     Email = "maxirmx@sw.consulting",
-                    Password = "$2b$12$eOXzlwFzyGVERe0sNwFeJO5XnvwsjloUpL4o2AIQ8254RT88MnsDi"
+                    Password = "$2b$12$eOXzlwFzyGVERe0sNwFeJO5XnvwsjloUpL4o2AIQ8254RT88MnsDi",
+                    Allowance = 0m,
+                    Uid = ""
                 }
             );
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Uid);
 
             modelBuilder.Entity<UserRole>().HasData(
                 new UserRole { UserId = 1, RoleId = 1 }, // Admin
