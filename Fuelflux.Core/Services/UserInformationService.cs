@@ -60,7 +60,7 @@ namespace Fuelflux.Core.Services
             return user != null && user.IsOperator();
         }
 
-        public async Task<ActionResult<bool>> CheckAdminOrSameUser(int id, int cuid)
+        public async Task<bool> CheckAdminOrSameUser(int id, int cuid)
         {
             if (cuid == 0) return false;
             if (cuid == id) return true;
@@ -72,6 +72,12 @@ namespace Fuelflux.Core.Services
             if (cuid == 0) return false;
             if (cuid == id) return true;
             return false;
+        }
+
+        public async Task<(bool, bool)> CheckAdminAndSameUser(int id, int cuid)
+        {
+            bool isAdmin = await CheckAdmin(cuid);
+            return (isAdmin, cuid == id || isAdmin);
         }
 
         public bool Exists(int id)
@@ -103,5 +109,6 @@ namespace Fuelflux.Core.Services
                 .Select(x => new UserViewItem(x))
                 .ToListAsync();
         }
+
     }
 }

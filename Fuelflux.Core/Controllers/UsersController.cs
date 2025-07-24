@@ -81,7 +81,7 @@ public class UsersController(
     {
         _logger.LogDebug("GetUser for id={id}", id);
         var ch = await _userInformationService.CheckAdminOrSameUser(id, _curUserId);
-        if (ch == null || !ch.Value)
+        if (!ch)
         {
             _logger.LogDebug("GetUser returning '403 Forbidden'");
             return _403();
@@ -158,23 +158,16 @@ public class UsersController(
             _logger.LogDebug("PutUser returning '404 Not Found'");
             return _404User(id);
         }
-        
-        bool isAdmin = await _userInformationService.CheckAdmin(_curUserId);
-        
-        // Check if user is trying to change admin-only properties without being admin
-        bool tryingToChangeAdminOnlyProperties = update.Allowance != null || update.Uid != null || update.Role != null;
-        if (tryingToChangeAdminOnlyProperties && !isAdmin)
-        {
-            _logger.LogDebug("PutUser returning '403 Forbidden' - non-admin trying to change admin-only properties (Role, Allowance, or Uid)");
-            return _403();
-        }
 
-        bool adminRequired = update.IsAdministrator() && !user.IsAdministrator();
-        
-        ActionResult<bool> ch;
-        ch = adminRequired ? await _userInformationService.CheckAdmin(_curUserId) :
-                             await _userInformationService.CheckAdminOrSameUser(id, _curUserId);
-        if (ch == null || !ch.Value)
+        bool adminRequired =
+            (update.Role != null && update.Role != user.Role?.RoleId) ||
+            (update.Allowance != null &&  update.Allowance != user.Allowance) ||
+            (update.Uid != null &&  update.Uid != user.Uid);
+
+        var (isAdmin, isAdminOrSameUser) = await _userInformationService.CheckAdminAndSameUser(id, _curUserId);
+        bool ch = adminRequired ? isAdmin : isAdminOrSameUser;
+
+        if (!ch)
         {
             _logger.LogDebug("PutUser returning '403 Forbidden'");
             return _403();
@@ -189,44 +182,18 @@ public class UsersController(
         if (update.FirstName != null) user.FirstName = update.FirstName;
         if (update.LastName != null) user.LastName = update.LastName;
         if (update.Patronymic != null) user.Patronymic = update.Patronymic;
-
-        // Only administrators can change Role, Allowance and Uid
         if (isAdmin)
         {
-            if (update.Role != null)
+            if (update.Role != user.Role?.RoleId)
             {
-                user.RoleId = (int)update.Role.Value;
+                user.RoleId = update.Role != null ? (int)update.Role.Value : null;
             }
-
-            bool isCustomer = update.Role != null
-                ? update.Role.Value == UserRoleConstants.Customer
-                : user.HasRole(UserRoleConstants.Customer);
-
-            bool hasUidAccess = update.Role != null
-                ? (update.Role.Value == UserRoleConstants.Customer || update.Role.Value == UserRoleConstants.Operator)
-                : user.HasUidAccess();
-
-            if (isCustomer)
-            {
-                user.Allowance = update.Allowance;
-            }
-            else
-            {
-                // Clear allowance for non-customers
-                user.Allowance = null;
-            }
-
-            if (hasUidAccess)
-            {
-                user.Uid = update.Uid;
-            }
-            else
-            {
-                // Clear uid for non-customers and non-operators
-                user.Uid = null;
-            }
+            if (update.Allowance != user.Allowance)
+                user.Allowance = user.Role?.RoleId == UserRoleConstants.Customer ? update.Allowance : null;
+            if (update.Uid != user.Uid) user.Uid = update.Uid;
+            user.Uid = user.Role?.RoleId == UserRoleConstants.Customer ||
+                       user.Role?.RoleId == UserRoleConstants.Operator ? update.Uid : null;
         }
-
         if (update.Password != null) user.Password = BCrypt.Net.BCrypt.HashPassword(update.Password);
 
         _db.Entry(user).State = EntityState.Modified;

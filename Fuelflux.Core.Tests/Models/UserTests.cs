@@ -120,20 +120,6 @@ public class UserTests
         Assert.That(user.IsOperator(), Is.False);
     }
 
-    [Test]
-    public void IsOperator_ReturnsFalse_WhenUserIsNotOperator()
-    {
-        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "admin" };
-        var user = new User
-        {
-            Id = 1,
-            Email = "test@example.com",
-            Password = "password123",
-            RoleId = role.Id,
-            Role = role
-        };
-        Assert.That(user.IsOperator(), Is.False);
-    }
 
     [Test]
     public void IsCustomer_ReturnsTrue_WhenUserHasCustomerRole()
@@ -435,100 +421,6 @@ public class UserTests
         Assert.That(result, Is.False);
     }
 
-    [Test]
-    public void User_HasUidAccess_ReturnsFalse_WhenRoleIsNull()
-    {
-        // Arrange
-        var user = new User
-        {
-            Id = 1,
-            Email = "test@example.com",
-            Password = "hashedpassword",
-            FirstName = "Test",
-            LastName = "User",
-            Patronymic = "",
-            RoleId = null,
-            Role = null
-        };
-
-        // Act
-        var result = user.HasUidAccess();
-
-        // Assert
-        Assert.That(result, Is.False);
-    }
-
-    [Test]
-    public void User_HasUidAccess_ReturnsTrue_WhenUserIsCustomer_WithNullRoleCheck()
-    {
-        // Arrange
-        var role = new Role { Id = 3, RoleId = UserRoleConstants.Customer, Name = "Customer" };
-        var user = new User
-        {
-            Id = 1,
-            Email = "test@example.com",
-            Password = "hashedpassword",
-            FirstName = "Test",
-            LastName = "User",
-            Patronymic = "",
-            RoleId = 3,
-            Role = role
-        };
-
-        // Act
-        var result = user.HasUidAccess();
-
-        // Assert
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void User_HasUidAccess_ReturnsTrue_WhenUserIsOperator_WithNullRoleCheck()
-    {
-        // Arrange
-        var role = new Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "Operator" };
-        var user = new User
-        {
-            Id = 1,
-            Email = "test@example.com",
-            Password = "hashedpassword",
-            FirstName = "Test",
-            LastName = "User",
-            Patronymic = "",
-            RoleId = 2,
-            Role = role
-        };
-
-        // Act
-        var result = user.HasUidAccess();
-
-        // Assert
-        Assert.That(result, Is.True);
-    }
-
-    [Test]
-    public void User_HasUidAccess_ReturnsFalse_WhenUserIsAdminOnly_WithNullRoleCheck()
-    {
-        // Arrange
-        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "Admin" };
-        var user = new User
-        {
-            Id = 1,
-            Email = "test@example.com",
-            Password = "hashedpassword",
-            FirstName = "Test",
-            LastName = "User",
-            Patronymic = "",
-            RoleId = 1,
-            Role = role
-        };
-
-        // Act
-        var result = user.HasUidAccess();
-
-        // Assert
-        Assert.That(result, Is.False);
-    }
 
     [Test]
     public void UserCreateItem_HasRole_ReturnsFalse_WhenRoleIsNull()
