@@ -1,7 +1,3 @@
-﻿// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
-// All rights reserved.
-// This file is a part of Fuelflux Core application
-//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -23,32 +19,19 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-using System.Text.Json;
-using Fuelflux.Core.Settings;
-using Fuelflux.Core.Models;
+using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Fuelflux.Core.RestModels;
+namespace Fuelflux.Core.Models;
 
-public class UserUpdateItem
+[Table("fuel_stations")]
+public class FuelStation
 {
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public string? Patronymic { get; set; }
-    public string? Email { get; set; }
-    public string? Password { get; set; }
-    public virtual List<UserRoleConstants> Roles { get; set; } = [];
-    public decimal? Allowance { get; set; }
-    public string? Uid { get; set; }
-    
-    public override string ToString()
-    {
-        return JsonSerializer.Serialize(this, JOptions.DefaultOptions);
-    }
-    
-    public bool HasRole(UserRoleConstants roleConstant)
-    {
-        return Roles != null && Roles.Contains(roleConstant);
-    }
+    [Column("id")]
+    public int Id { get; set; }
 
-    public bool IsAdministrator() => HasRole(UserRoleConstants.Admin);
+    [Column("name")]
+    public required string Name { get; set; }
+
+    public virtual ICollection<FuelTank> FuelTanks { get; set; } = [];
+    public virtual ICollection<PumpController> PumpControllers { get; set; } = [];
 }

@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
+// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
 // All rights reserved.
 // This file is a part of Fuelflux Core application
 //
@@ -23,32 +23,9 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-using System.Text.Json;
-using Fuelflux.Core.Settings;
-using Fuelflux.Core.Models;
+namespace Fuelflux.Core.Settings;
 
-namespace Fuelflux.Core.RestModels;
-
-public class UserUpdateItem
+public class DeviceAuthSettings
 {
-    public string? FirstName { get; set; }
-    public string? LastName { get; set; }
-    public string? Patronymic { get; set; }
-    public string? Email { get; set; }
-    public string? Password { get; set; }
-    public virtual List<UserRoleConstants> Roles { get; set; } = [];
-    public decimal? Allowance { get; set; }
-    public string? Uid { get; set; }
-    
-    public override string ToString()
-    {
-        return JsonSerializer.Serialize(this, JOptions.DefaultOptions);
-    }
-    
-    public bool HasRole(UserRoleConstants roleConstant)
-    {
-        return Roles != null && Roles.Contains(roleConstant);
-    }
-
-    public bool IsAdministrator() => HasRole(UserRoleConstants.Admin);
+    public int SessionMinutes { get; set; } = 30;
 }

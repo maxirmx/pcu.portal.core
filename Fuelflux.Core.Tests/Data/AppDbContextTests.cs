@@ -410,6 +410,63 @@ public class UserInformationServiceTests
     }
 
     [Test]
+    public async Task UserViewItem_IncludesCustomerData_WhenUserIsCustomer()
+    {
+        using var ctx = CreateContext();
+        var service = new UserInformationService(ctx);
+        var customerRole = ctx.Roles.Single(r => r.RoleId == UserRoleConstants.Customer);
+        var user = CreateUser(42, "cust@test.com", "password", "Cust", "User", "", [customerRole]);
+        user.Allowance = 12.34m;
+        user.Uid = "ABCDEFGH";
+        ctx.Users.Add(user);
+        await ctx.SaveChangesAsync();
+
+        var result = await service.UserViewItem(42);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Allowance, Is.EqualTo(12.34m));
+        Assert.That(result.Uid, Is.EqualTo("ABCDEFGH"));
+    }
+
+    [Test]
+    public async Task UserViewItem_IncludesUidOnly_WhenUserIsOperator()
+    {
+        using var ctx = CreateContext();
+        var service = new UserInformationService(ctx);
+        var operatorRole = ctx.Roles.Single(r => r.RoleId == UserRoleConstants.Operator);
+        var user = CreateUser(43, "op@test.com", "password", "Op", "User", "", [operatorRole]);
+        user.Allowance = 12.34m; // This should not be shown
+        user.Uid = "OPERATOR123";
+        ctx.Users.Add(user);
+        await ctx.SaveChangesAsync();
+
+        var result = await service.UserViewItem(43);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Allowance, Is.Null); // Should be null for operators
+        Assert.That(result.Uid, Is.EqualTo("OPERATOR123")); // Should be shown for operators
+    }
+
+    [Test]
+    public async Task UserViewItem_ExcludesAllowanceAndUid_WhenUserIsAdminOnly()
+    {
+        using var ctx = CreateContext();
+        var service = new UserInformationService(ctx);
+        var adminRole = ctx.Roles.Single(r => r.RoleId == UserRoleConstants.Admin);
+        var user = CreateUser(44, "admin@test.com", "password", "Admin", "User", "", [adminRole]);
+        user.Allowance = 12.34m; // This should not be shown
+        user.Uid = "ADMIN123"; // This should not be shown
+        ctx.Users.Add(user);
+        await ctx.SaveChangesAsync();
+
+        var result = await service.UserViewItem(44);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Allowance, Is.Null); // Should be null for admin-only
+        Assert.That(result.Uid, Is.Null); // Should be null for admin-only
+    }
+
+    [Test]
     public async Task UserViewItem_ReturnsNull_WhenUserDoesNotExist()
     {
         // Arrange

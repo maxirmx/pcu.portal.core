@@ -125,4 +125,125 @@ public class UserTests
         };
         Assert.That(user.IsOperator(), Is.False);
     }
+
+    [Test]
+    public void IsOperator_ReturnsFalse_WhenUserIsNotOperator()
+    {
+        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "admin" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "password123",
+            UserRoles =
+            [
+                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
+            ]
+        };
+        Assert.That(user.IsOperator(), Is.False);
+    }
+
+    [Test]
+    public void IsCustomer_ReturnsTrue_WhenUserHasCustomerRole()
+    {
+        var role = new Role { Id = 3, RoleId = UserRoleConstants.Customer, Name = "customer" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "password123",
+            UserRoles =
+            [
+                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
+            ]
+        };
+        Assert.That(user.IsCustomer(), Is.True);
+    }
+
+    [Test]
+    public void IsCustomer_ReturnsFalse_WhenUserIsNotCustomer()
+    {
+        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "admin" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "password123",
+            UserRoles =
+            [
+                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
+            ]
+        };
+        Assert.That(user.IsCustomer(), Is.False);
+    }
+
+    [Test]
+    public void HasUidAccess_ReturnsTrue_WhenUserIsCustomer()
+    {
+        var role = new Role { Id = 3, RoleId = UserRoleConstants.Customer, Name = "customer" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "password123",
+            UserRoles =
+            [
+                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
+            ]
+        };
+        Assert.That(user.HasUidAccess(), Is.True);
+    }
+
+    [Test]
+    public void HasUidAccess_ReturnsTrue_WhenUserIsOperator()
+    {
+        var role = new Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "operator" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "password123",
+            UserRoles =
+            [
+                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
+            ]
+        };
+        Assert.That(user.HasUidAccess(), Is.True);
+    }
+
+    [Test]
+    public void HasUidAccess_ReturnsFalse_WhenUserIsAdminOnly()
+    {
+        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "admin" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "password123",
+            UserRoles =
+            [
+                new UserRole { UserId = 1, RoleId = role.Id, Role = role }
+            ]
+        };
+        Assert.That(user.HasUidAccess(), Is.False);
+    }
+
+    [Test]
+    public void HasUidAccess_ReturnsTrue_WhenUserHasBothCustomerAndOperatorRoles()
+    {
+        var customerRole = new Role { Id = 3, RoleId = UserRoleConstants.Customer, Name = "customer" };
+        var operatorRole = new Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "operator" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "password123",
+            UserRoles =
+            [
+                new UserRole { UserId = 1, RoleId = customerRole.Id, Role = customerRole },
+                new UserRole { UserId = 1, RoleId = operatorRole.Id, Role = operatorRole }
+            ]
+        };
+        Assert.That(user.HasUidAccess(), Is.True);
+    }
 }

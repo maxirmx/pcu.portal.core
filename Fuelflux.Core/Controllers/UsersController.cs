@@ -130,6 +130,8 @@ public class UsersController(
             Patronymic = user.Patronymic ?? "",
             Email = user.Email,
             Password = hashToStoreInDb,
+            Allowance = user.HasRole(UserRoleConstants.Customer) ? user.Allowance : null,
+            Uid = user.HasRole(UserRoleConstants.Customer) || user.HasRole(UserRoleConstants.Operator) ? user.Uid : null
         };
 
         _db.Users.Add(ur);
@@ -164,7 +166,17 @@ public class UsersController(
             _logger.LogDebug("PutUser returning '404 Not Found'");
             return _404User(id);
         }
+        
         bool adminRequired = update.IsAdministrator() && !user.IsAdministrator();
+        bool isAdmin = await _userInformationService.CheckAdmin(_curUserId);
+        
+        // Check if user is trying to change Allowance or Uid without being admin
+        bool tryingToChangeAllowanceOrUid = update.Allowance != null || update.Uid != null;
+        if (tryingToChangeAllowanceOrUid && !isAdmin)
+        {
+            _logger.LogDebug("PutUser returning '403 Forbidden' - non-admin trying to change Allowance or Uid");
+            return _403();
+        }
 
         ActionResult<bool> ch;
         ch = adminRequired ? await _userInformationService.CheckAdmin(_curUserId) :
@@ -197,6 +209,38 @@ public class UsersController(
             foreach (var role in rolesInDb)
             {
                 _db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = role.Id });
+            }
+        }
+
+        // Only administrators can change Allowance and Uid
+        if (isAdmin)
+        {
+            bool isCustomer = update.Roles != null
+                ? update.Roles.Contains(UserRoleConstants.Customer)
+                : user.HasRole(UserRoleConstants.Customer);
+
+            bool hasUidAccess = update.Roles != null
+                ? update.Roles.Contains(UserRoleConstants.Customer) || update.Roles.Contains(UserRoleConstants.Operator)
+                : user.HasUidAccess();
+
+            if (isCustomer)
+            {
+                user.Allowance = update.Allowance;
+            }
+            else
+            {
+                // Clear allowance for non-customers
+                user.Allowance = null;
+            }
+
+            if (hasUidAccess)
+            {
+                user.Uid = update.Uid;
+            }
+            else
+            {
+                // Clear uid for non-customers and non-operators
+                user.Uid = null;
             }
         }
 

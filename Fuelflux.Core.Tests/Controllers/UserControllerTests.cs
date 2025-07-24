@@ -280,6 +280,38 @@ public class UsersControllerTests
         Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status404NotFound));
     }
 
+    [Test]
+    public async Task GetUser_AllowsUserToViewOwnAllowanceAndUid()
+    {
+        // Arrange
+        SetCurrentUserId(3); // Customer user viewing own data
+        
+        // Set up customer with allowance and uid
+        _customerUser.Allowance = 100.50m;
+        _customerUser.Uid = "CUSTOMER_UID_123";
+        
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
+        await _dbContext.SaveChangesAsync();
+
+        var expectedUser = new UserViewItem(_customerUser);
+
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(3, 3)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.UserViewItem(3)).ReturnsAsync(expectedUser);
+
+        // Act
+        var result = await _controller.GetUser(3); // Getting own data
+
+        // Assert
+        Assert.That(result.Value, Is.Not.Null);
+        Assert.That(result.Value, Is.TypeOf<UserViewItem>());
+        var user = result.Value;
+        Assert.That(user!.Id, Is.EqualTo(3));
+        Assert.That(user.Email, Is.EqualTo("customer@example.com"));
+        // User can view their own allowance and uid even though they cannot change them
+        Assert.That(user.Allowance, Is.EqualTo(100.50m));
+        Assert.That(user.Uid, Is.EqualTo("CUSTOMER_UID_123"));
+    }
+
     #endregion
 
     #region PostUser Tests
@@ -574,6 +606,153 @@ public class UsersControllerTests
 
         // Act
         var result = await _controller.PutUser(2, updateItem);
+
+        // Assert
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var objectResult = result as ObjectResult;
+        Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task PutUser_ReturnsForbidden_WhenNonAdminTriesToChangeAllowance()
+    {
+        // Arrange
+        SetCurrentUserId(3); // Customer user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
+        await _dbContext.SaveChangesAsync();
+
+        var updateItem = new UserUpdateItem
+        {
+            FirstName = "Customer",
+            Allowance = 150.50m // Non-admin trying to change allowance
+        };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(3)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.PutUser(3, updateItem);
+
+        // Assert
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var objectResult = result as ObjectResult;
+        Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task PutUser_ReturnsForbidden_WhenNonAdminTriesToChangeUid()
+    {
+        // Arrange
+        SetCurrentUserId(2); // Operator user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
+        await _dbContext.SaveChangesAsync();
+
+        var updateItem = new UserUpdateItem
+        {
+            FirstName = "Operator",
+            Uid = "NEW_UID_123" // Non-admin trying to change UID
+        };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(2)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.PutUser(2, updateItem);
+
+        // Assert
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var objectResult = result as ObjectResult;
+        Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task PutUser_AllowsNonAdminToUpdateOtherFields()
+    {
+        // Arrange
+        SetCurrentUserId(2); // Operator user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
+        await _dbContext.SaveChangesAsync();
+
+        var updateItem = new UserUpdateItem
+        {
+            FirstName = "UpdatedOperator",
+            LastName = "UpdatedLastName",
+            Email = "updated.operator@example.com"
+            // Not changing Allowance or Uid
+        };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(2)).ReturnsAsync(false);
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 2)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.Exists("updated.operator@example.com")).Returns(false);
+
+        // Act
+        var result = await _controller.PutUser(2, updateItem);
+
+        // Assert
+        Assert.That(result, Is.TypeOf<NoContentResult>());
+
+        // Verify user was updated
+        var updatedUser = await _dbContext.Users.FindAsync(2);
+        Assert.That(updatedUser, Is.Not.Null);
+        Assert.That(updatedUser!.FirstName, Is.EqualTo("UpdatedOperator"));
+        Assert.That(updatedUser.LastName, Is.EqualTo("UpdatedLastName"));
+        Assert.That(updatedUser.Email, Is.EqualTo("updated.operator@example.com"));
+    }
+
+    [Test]
+    public async Task PutUser_AllowsAdminToChangeAllowanceAndUid()
+    {
+        // Arrange
+        SetCurrentUserId(1); // Admin user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
+        await _dbContext.SaveChangesAsync();
+
+        var updateItem = new UserUpdateItem
+        {
+            FirstName = "AdminUpdated",
+            Allowance = 200.75m,
+            Uid = "ADMIN_SET_UID",
+            Roles = [UserRoleConstants.Customer] // Making user customer to allow allowance
+        };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(3, 1)).ReturnsAsync(new ActionResult<bool>(true));
+
+        // Act
+        var result = await _controller.PutUser(3, updateItem); // Updating customer
+
+        // Assert
+        Assert.That(result, Is.TypeOf<NoContentResult>());
+
+        // Verify user was updated including allowance and uid
+        var updatedUser = await _dbContext.Users
+            .Include(u => u.UserRoles)
+            .ThenInclude(ur => ur.Role)
+            .FirstOrDefaultAsync(u => u.Id == 3);
+
+        Assert.That(updatedUser, Is.Not.Null);
+        Assert.That(updatedUser!.FirstName, Is.EqualTo("AdminUpdated"));
+        Assert.That(updatedUser.Allowance, Is.EqualTo(200.75m));
+        Assert.That(updatedUser.Uid, Is.EqualTo("ADMIN_SET_UID"));
+    }
+
+    [Test]
+    public async Task PutUser_ReturnsForbidden_WhenNonAdminTriesToChangeBothAllowanceAndUid()
+    {
+        // Arrange
+        SetCurrentUserId(3); // Customer user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
+        await _dbContext.SaveChangesAsync();
+
+        var updateItem = new UserUpdateItem
+        {
+            FirstName = "Customer",
+            Allowance = 150.50m,
+            Uid = "CUSTOMER_UID"
+        };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(3)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.PutUser(3, updateItem);
 
         // Assert
         Assert.That(result, Is.TypeOf<ObjectResult>());
