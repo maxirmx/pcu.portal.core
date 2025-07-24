@@ -30,4 +30,5 @@ public interface IDeviceAuthService
     string Authorize();
     bool Validate(string token);
     void Deauthorize(string token);
+    void RemoveExpiredTokens();
 }
