@@ -19,7 +19,8 @@ public class PumpControllerTests
     public void Setup()
     {
         var opts = Options.Create(new DeviceAuthSettings { SessionMinutes = 1 });
-        _service = new DeviceAuthService(opts, new LoggerFactory().CreateLogger<DeviceAuthService>());
+        var appOpts = Options.Create(new AppSettings { Secret = "secret" });
+        _service = new DeviceAuthService(opts, appOpts, new LoggerFactory().CreateLogger<DeviceAuthService>());
         _controller = new PumpController(_service, new LoggerFactory().CreateLogger<PumpController>());
     }
 
