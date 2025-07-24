@@ -9,7 +9,7 @@ public class PumpController
     public int Id { get; set; }
 
     [Column("guid")]
-    public required string Guid { get; set; }
+    public required Guid Guid { get; set; }
 
     [Column("fuel_station_id")]
     public int FuelStationId { get; set; }
