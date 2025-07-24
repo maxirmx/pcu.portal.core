@@ -71,7 +71,7 @@ public class AuthorizeAttribute : Attribute, IAuthorizationFilter
 
     private static bool CheckDeviceAuthentication(AuthorizationFilterContext context)
     {
-        context.HttpContext.Items.TryGetValue("IsDeviceAuthorized", out var deviceAuthObj);
-        return deviceAuthObj is bool auth && auth;
+        context.HttpContext.Items.TryGetValue("UserUid", out var userUidObj);
+        return userUidObj is string userUid && !string.IsNullOrEmpty(userUid);
     }
 }

@@ -147,7 +147,7 @@ public class AuthorizeAttributeTests
         // Arrange
         var items = new Dictionary<object, object?>
         {
-            ["IsDeviceAuthorized"] = true
+            ["UserUid"] = "user123"
         };
         var context = CreateContext(items);
         var attribute = new AuthorizeAttribute(AuthorizationType.Device);
@@ -165,8 +165,26 @@ public class AuthorizeAttributeTests
         // Arrange
         var items = new Dictionary<object, object?>
         {
-            ["IsDeviceAuthorized"] = false
+            ["UserUid"] = ""
         };
+        var context = CreateContext(items);
+        var attribute = new AuthorizeAttribute(AuthorizationType.Device);
+
+        // Act
+        attribute.OnAuthorization(context);
+
+        // Assert
+        Assert.That(context.Result, Is.Not.Null);
+        Assert.That(context.Result, Is.TypeOf<JsonResult>());
+        var jsonResult = context.Result as JsonResult;
+        Assert.That(jsonResult!.StatusCode, Is.EqualTo(StatusCodes.Status401Unauthorized));
+    }
+
+    [Test]
+    public void OnAuthorization_ReturnsUnauthorized_WhenUserUidIsNull_AndDeviceAuthorizationRequired()
+    {
+        // Arrange
+        var items = new Dictionary<object, object?>();
         var context = CreateContext(items);
         var attribute = new AuthorizeAttribute(AuthorizationType.Device);
 
@@ -207,7 +225,7 @@ public class AuthorizeAttributeTests
         // Arrange
         var items = new Dictionary<object, object?>
         {
-            ["IsDeviceAuthorized"] = true
+            ["UserUid"] = "user123"
         };
         var context = CreateContext(items);
         var attribute = new AuthorizeAttribute(AuthorizationType.User);
@@ -396,7 +414,6 @@ public class JwtMiddlewareTests
         Assert.That(context.Items["UserId"], Is.EqualTo(userId));
         Assert.That(context.Items["TokenType"], Is.EqualTo("User"));
         Assert.That(context.Items["Token"], Is.EqualTo("validUserToken"));
-        Assert.That(context.Items.ContainsKey("IsDeviceAuthorized"), Is.False);
         Assert.That(context.Items.ContainsKey("PumpControllerUid"), Is.False);
         Assert.That(context.Items.ContainsKey("UserUid"), Is.False);
     }
@@ -422,7 +439,6 @@ public class JwtMiddlewareTests
 
         // Assert
         Assert.That(context.Items["TokenType"], Is.EqualTo("Device"));
-        Assert.That(context.Items["IsDeviceAuthorized"], Is.EqualTo(true));
         Assert.That(context.Items["Token"], Is.EqualTo("validDeviceToken"));
         Assert.That(context.Items["PumpControllerUid"], Is.EqualTo("pump123"));
         Assert.That(context.Items["UserUid"], Is.EqualTo("user456"));
@@ -450,7 +466,6 @@ public class JwtMiddlewareTests
         // Assert
         Assert.That(context.Items["Token"], Is.EqualTo("invalidDeviceToken"));
         Assert.That(context.Items.ContainsKey("TokenType"), Is.False);
-        Assert.That(context.Items.ContainsKey("IsDeviceAuthorized"), Is.False);
         Assert.That(context.Items.ContainsKey("PumpControllerUid"), Is.False);
         Assert.That(context.Items.ContainsKey("UserUid"), Is.False);
         Assert.That(context.Items.ContainsKey("UserId"), Is.False);

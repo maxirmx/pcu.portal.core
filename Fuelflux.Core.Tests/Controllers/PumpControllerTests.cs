@@ -127,7 +127,8 @@ public class PumpControllerTests
         // In real app, this happens automatically in the middleware pipeline
         _controller.ControllerContext.HttpContext.Items["Token"] = token;
         _controller.ControllerContext.HttpContext.Items["TokenType"] = "Device";
-        _controller.ControllerContext.HttpContext.Items["IsDeviceAuthorized"] = true;
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
 
         // Act - Call the controller action
         var res = _controller.Deauthorize();

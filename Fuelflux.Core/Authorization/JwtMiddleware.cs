@@ -56,7 +56,6 @@ public class JwtMiddleware(RequestDelegate next)
                 if (deviceValidationResult != null)
                 {
                     context.Items["TokenType"] = "Device";
-                    context.Items["IsDeviceAuthorized"] = true;
                     context.Items["PumpControllerUid"] = deviceValidationResult.PumpControllerUid;
                     context.Items["UserUid"] = deviceValidationResult.UserUid;
                 }
