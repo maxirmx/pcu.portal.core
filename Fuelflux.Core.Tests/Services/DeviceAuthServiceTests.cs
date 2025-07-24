@@ -73,10 +73,13 @@ public class DeviceAuthServiceTests
     }
 
     [Test]
-    public void Authorize_And_Validate_ReturnsTrue()
+    public void Authorize_And_Validate_ReturnsValidationResult()
     {
         var token = _service.Authorize(_pump, _user);
-        Assert.That(_service.Validate(token), Is.True);
+        var result = _service.Validate(token);
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.PumpControllerUid, Is.EqualTo(_pump.Uid));
+        Assert.That(result.UserUid, Is.EqualTo(_user.Uid));
     }
 
     [Test]
@@ -84,11 +87,11 @@ public class DeviceAuthServiceTests
     {
         var token = _service.Authorize(_pump, _user);
         _service.Deauthorize(token);
-        Assert.That(_service.Validate(token), Is.False);
+        Assert.That(_service.Validate(token), Is.Null);
     }
 
     [Test]
-    public void Validate_ReturnsFalse_WhenExpired()
+    public void Validate_ReturnsNull_WhenExpired()
     {
         var opts = Options.Create(new DeviceAuthSettings { SessionMinutes = 0 });
         var appOpts = Options.Create(new AppSettings { Secret = "secret" });
@@ -115,6 +118,6 @@ public class DeviceAuthServiceTests
             Role = role
         };
         var token = svc.Authorize(pump, user);
-        Assert.That(svc.Validate(token), Is.False);
+        Assert.That(svc.Validate(token), Is.Null);
     }
 }

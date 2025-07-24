@@ -2,10 +2,12 @@ using Fuelflux.Core.Models;
 
 namespace Fuelflux.Core.Services;
 
+public record DeviceValidationResult(string PumpControllerUid, string UserUid);
+
 public interface IDeviceAuthService
 {
     string Authorize(PumpController pump, User user);
-    bool Validate(string token);
+    DeviceValidationResult? Validate(string token);
     void Deauthorize(string token);
     void RemoveExpiredTokens();
 }

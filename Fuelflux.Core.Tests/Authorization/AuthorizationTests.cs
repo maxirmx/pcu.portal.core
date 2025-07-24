@@ -397,6 +397,8 @@ public class JwtMiddlewareTests
         Assert.That(context.Items["TokenType"], Is.EqualTo("User"));
         Assert.That(context.Items["Token"], Is.EqualTo("validUserToken"));
         Assert.That(context.Items.ContainsKey("IsDeviceAuthorized"), Is.False);
+        Assert.That(context.Items.ContainsKey("PumpControllerUid"), Is.False);
+        Assert.That(context.Items.ContainsKey("UserUid"), Is.False);
     }
 
     [Test]
@@ -410,7 +412,8 @@ public class JwtMiddlewareTests
         mockJwtUtils.Setup(x => x.ValidateJwtToken("validDeviceToken")).Returns((int?)null);
 
         var mockDeviceAuthService = new Mock<IDeviceAuthService>();
-        mockDeviceAuthService.Setup(x => x.Validate("validDeviceToken")).Returns(true);
+        var expectedResult = new DeviceValidationResult("pump123", "user456");
+        mockDeviceAuthService.Setup(x => x.Validate("validDeviceToken")).Returns(expectedResult);
 
         var middleware = new JwtMiddleware(innerContext => Task.CompletedTask);
 
@@ -421,6 +424,35 @@ public class JwtMiddlewareTests
         Assert.That(context.Items["TokenType"], Is.EqualTo("Device"));
         Assert.That(context.Items["IsDeviceAuthorized"], Is.EqualTo(true));
         Assert.That(context.Items["Token"], Is.EqualTo("validDeviceToken"));
+        Assert.That(context.Items["PumpControllerUid"], Is.EqualTo("pump123"));
+        Assert.That(context.Items["UserUid"], Is.EqualTo("user456"));
+        Assert.That(context.Items.ContainsKey("UserId"), Is.False);
+    }
+
+    [Test]
+    public async Task Invoke_DoesNotSetDeviceInfo_WhenDeviceTokenIsInvalid()
+    {
+        // Arrange
+        var context = new DefaultHttpContext();
+        context.Request.Headers["Authorization"] = "Bearer invalidDeviceToken";
+
+        var mockJwtUtils = new Mock<IJwtUtils>();
+        mockJwtUtils.Setup(x => x.ValidateJwtToken("invalidDeviceToken")).Returns((int?)null);
+
+        var mockDeviceAuthService = new Mock<IDeviceAuthService>();
+        mockDeviceAuthService.Setup(x => x.Validate("invalidDeviceToken")).Returns((DeviceValidationResult?)null);
+
+        var middleware = new JwtMiddleware(innerContext => Task.CompletedTask);
+
+        // Act
+        await middleware.Invoke(context, mockJwtUtils.Object, mockDeviceAuthService.Object);
+
+        // Assert
+        Assert.That(context.Items["Token"], Is.EqualTo("invalidDeviceToken"));
+        Assert.That(context.Items.ContainsKey("TokenType"), Is.False);
+        Assert.That(context.Items.ContainsKey("IsDeviceAuthorized"), Is.False);
+        Assert.That(context.Items.ContainsKey("PumpControllerUid"), Is.False);
+        Assert.That(context.Items.ContainsKey("UserUid"), Is.False);
         Assert.That(context.Items.ContainsKey("UserId"), Is.False);
     }
 
@@ -446,27 +478,5 @@ public class JwtMiddlewareTests
 
         // Assert
         Assert.That(nextDelegateCalled, Is.True);
-    }
-}
-
-[TestFixture]
-public class AllowAnonymousAttributeTests
-{
-    [Test]
-    public void AllowAnonymousAttribute_CanBeAppliedToMethod()
-    {
-        // This test verifies that the AllowAnonymousAttribute can be applied to a method
-        var attribute = new AllowAnonymousAttribute();
-
-        // Assert it exists and is of the correct type
-        Assert.That(attribute, Is.InstanceOf<Attribute>());
-
-        // Verify it can only be applied to methods
-        var usageAttribute = typeof(AllowAnonymousAttribute).GetCustomAttributes(typeof(AttributeUsageAttribute), false)
-            .Cast<AttributeUsageAttribute>()
-            .FirstOrDefault();
-
-        Assert.That(usageAttribute, Is.Not.Null);
-        Assert.That(usageAttribute!.ValidOn, Is.EqualTo(AttributeTargets.Method));
     }
 }

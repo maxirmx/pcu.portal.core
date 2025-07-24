@@ -88,11 +88,11 @@ public class DeviceAuthService : IDeviceAuthService
         return tokenString;
     }
 
-    public bool Validate(string token)
+    public DeviceValidationResult? Validate(string token)
     {
         if (!_sessions.TryGetValue(token, out var session))
         {
-            return false;
+            return null;
         }
 
         var tokenHandler = new JwtSecurityTokenHandler();
@@ -113,16 +113,16 @@ public class DeviceAuthService : IDeviceAuthService
                 _sessions.TryRemove(token, out _);
                 var tokenPrefix = GetSafeTokenIdentifier(token);
                 _logger.LogDebug("Token {tokenPrefix} expired", tokenPrefix);
-                return false;
+                return null;
             }
 
-            return true;
+            return new DeviceValidationResult(session.PumpController.Uid, session.User.Uid!);
         }
         catch (SecurityTokenException ex)
         {
             _logger.LogWarning(ex, "Invalid device token");
             _sessions.TryRemove(token, out _);
-            return false;
+            return null;
         }
     }
 

@@ -52,11 +52,13 @@ public class JwtMiddleware(RequestDelegate next)
             else
             {
                 // If not a valid user token, try device token validation
-                var isValidDevice = deviceAuthService.Validate(token);
-                if (isValidDevice)
+                var deviceValidationResult = deviceAuthService.Validate(token);
+                if (deviceValidationResult != null)
                 {
                     context.Items["TokenType"] = "Device";
                     context.Items["IsDeviceAuthorized"] = true;
+                    context.Items["PumpControllerUid"] = deviceValidationResult.PumpControllerUid;
+                    context.Items["UserUid"] = deviceValidationResult.UserUid;
                 }
             }
         }

@@ -104,7 +104,10 @@ public class PumpControllerTests
         var result = await _controller.Authorize(req);
         Assert.That(result.Result, Is.TypeOf<OkObjectResult>());
         var token = ((result.Result as OkObjectResult)!.Value as TokenResponse)!.Token;
-        Assert.That(_service.Validate(token), Is.True);
+        var validationResult = _service.Validate(token);
+        Assert.That(validationResult, Is.Not.Null);
+        Assert.That(validationResult!.PumpControllerUid, Is.EqualTo(_pump.Uid));
+        Assert.That(validationResult.UserUid, Is.EqualTo(_user.Uid));
     }
 
     [Test]
@@ -132,7 +135,7 @@ public class PumpControllerTests
 
         // Assert
         Assert.That(res, Is.TypeOf<NoContentResult>());
-        Assert.That(_service.Validate(token), Is.False);
+        Assert.That(_service.Validate(token), Is.Null);
     }
 
     [Test]
