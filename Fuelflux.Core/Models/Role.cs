@@ -38,6 +38,6 @@ namespace Fuelflux.Core.Models
         [Column("name")]
         public required string Name { get; set; }
 
-        public virtual ICollection<User> Users { get; set; } = [];
+        public ICollection<User> Users { get; set; } = [];
     }
 }

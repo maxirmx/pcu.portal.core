@@ -29,10 +29,10 @@ public class PumpController
     [Column("id")]
     public int Id { get; set; }
 
-    [Column("guid")]
-    public required Guid Guid { get; set; }
+    [Column("uid")]
+    public required Guid Uid { get; set; }
 
     [Column("fuel_station_id")]
     public int FuelStationId { get; set; }
-    public virtual FuelStation FuelStation { get; set; } = null!;
+    public FuelStation FuelStation { get; set; } = null!;
 }

@@ -32,7 +32,10 @@ public class FuelTank
     [Column("number", TypeName = "numeric(3)")]
     public decimal Number { get; set; }
 
+    [Column("volume", TypeName = "numeric(10,2)")]
+    public decimal Allowance { get; set; } = 0;
+
     [Column("fuel_station_id")]
     public int FuelStationId { get; set; }
-    public virtual FuelStation FuelStation { get; set; } = null!;
+    public FuelStation FuelStation { get; set; } = null!;
 }
