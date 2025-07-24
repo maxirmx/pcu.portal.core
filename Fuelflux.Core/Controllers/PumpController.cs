@@ -40,9 +40,18 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
 
     [HttpPost("deauthorize")]
     [ProducesResponseType(StatusCodes.Status200OK)]
-    public IActionResult Deauthorize(TokenRequest request)
+    [ProducesResponseType(StatusCodes.Status401Unauthorized, Type = typeof(ErrMessage))]
+    public IActionResult Deauthorize()
     {
-        _authService.Deauthorize(request.Token);
+        var token = Request.Headers["Authorization"].FirstOrDefault()?.Split(' ').Last();
+        if (string.IsNullOrEmpty(token))
+        {
+            const string errorMessage = "Необходимо войти в систему.";
+            _logger.LogWarning(errorMessage);
+            return StatusCode(StatusCodes.Status401Unauthorized, new ErrMessage { Msg = errorMessage });
+        }
+
+        _authService.Deauthorize(token);
         return Ok();
     }
 }
