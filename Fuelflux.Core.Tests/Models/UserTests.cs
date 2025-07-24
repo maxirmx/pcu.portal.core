@@ -25,6 +25,7 @@
 
 using NUnit.Framework;
 using Fuelflux.Core.Models;
+using Fuelflux.Core.RestModels;
 using System.Collections.Generic;
 
 namespace Fuelflux.Core.Tests.Models;
@@ -222,5 +223,370 @@ public class UserTests
             Role = customerRole
         };
         Assert.That(user.HasUidAccess(), Is.True);
+    }
+
+    [Test]
+    public void HasAnyRole_ReturnsFalse_WhenRoleIsNull()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = null,
+            Role = null
+        };
+
+        // Act
+        var result = user.HasAnyRole();
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void HasAnyRole_ReturnsTrue_WhenRoleIsNotNull()
+    {
+        // Arrange
+        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "Admin" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = 1,
+            Role = role
+        };
+
+        // Act
+        var result = user.HasAnyRole();
+
+        // Assert
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void HasRole_ReturnsFalse_WhenRoleIsNull()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = null,
+            Role = null
+        };
+
+        // Act
+        var result = user.HasRole(UserRoleConstants.Admin);
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void HasRole_ReturnsTrue_WhenRoleMatches()
+    {
+        // Arrange
+        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "Admin" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = 1,
+            Role = role
+        };
+
+        // Act
+        var result = user.HasRole(UserRoleConstants.Admin);
+
+        // Assert
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void HasRole_ReturnsFalse_WhenRoleDoesNotMatch()
+    {
+        // Arrange
+        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "Admin" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = 1,
+            Role = role
+        };
+
+        // Act
+        var result = user.HasRole(UserRoleConstants.Customer);
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsAdministrator_ReturnsFalse_WhenRoleIsNull()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = null,
+            Role = null
+        };
+
+        // Act
+        var result = user.IsAdministrator();
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsOperator_ReturnsFalse_WhenRoleIsNull()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = null,
+            Role = null
+        };
+
+        // Act
+        var result = user.IsOperator();
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void IsCustomer_ReturnsFalse_WhenRoleIsNull()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = null,
+            Role = null
+        };
+
+        // Act
+        var result = user.IsCustomer();
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void HasUidAccess_ReturnsFalse_WhenRoleIsNull()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = null,
+            Role = null
+        };
+
+        // Act
+        var result = user.HasUidAccess();
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void User_HasUidAccess_ReturnsFalse_WhenRoleIsNull()
+    {
+        // Arrange
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = null,
+            Role = null
+        };
+
+        // Act
+        var result = user.HasUidAccess();
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void User_HasUidAccess_ReturnsTrue_WhenUserIsCustomer_WithNullRoleCheck()
+    {
+        // Arrange
+        var role = new Role { Id = 3, RoleId = UserRoleConstants.Customer, Name = "Customer" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = 3,
+            Role = role
+        };
+
+        // Act
+        var result = user.HasUidAccess();
+
+        // Assert
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void User_HasUidAccess_ReturnsTrue_WhenUserIsOperator_WithNullRoleCheck()
+    {
+        // Arrange
+        var role = new Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "Operator" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = 2,
+            Role = role
+        };
+
+        // Act
+        var result = user.HasUidAccess();
+
+        // Assert
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void User_HasUidAccess_ReturnsFalse_WhenUserIsAdminOnly_WithNullRoleCheck()
+    {
+        // Arrange
+        var role = new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "Admin" };
+        var user = new User
+        {
+            Id = 1,
+            Email = "test@example.com",
+            Password = "hashedpassword",
+            FirstName = "Test",
+            LastName = "User",
+            Patronymic = "",
+            RoleId = 1,
+            Role = role
+        };
+
+        // Act
+        var result = user.HasUidAccess();
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void UserCreateItem_HasRole_ReturnsFalse_WhenRoleIsNull()
+    {
+        // Arrange
+        var userCreateItem = new UserCreateItem
+        {
+            Email = "test@example.com",
+            Password = "password",
+            FirstName = "Test",
+            LastName = "User",
+            Role = null
+        };
+
+        // Act
+        var result = userCreateItem.HasRole(UserRoleConstants.Admin);
+
+        // Assert
+        Assert.That(result, Is.False);
+    }
+
+    [Test]
+    public void UserCreateItem_HasRole_ReturnsTrue_WhenRoleMatches()
+    {
+        // Arrange
+        var userCreateItem = new UserCreateItem
+        {
+            Email = "test@example.com",
+            Password = "password",
+            FirstName = "Test",
+            LastName = "User",
+            Role = UserRoleConstants.Admin
+        };
+
+        // Act
+        var result = userCreateItem.HasRole(UserRoleConstants.Admin);
+
+        // Assert
+        Assert.That(result, Is.True);
+    }
+
+    [Test]
+    public void UserCreateItem_HasRole_ReturnsFalse_WhenRoleDoesNotMatch()
+    {
+        // Arrange
+        var userCreateItem = new UserCreateItem
+        {
+            Email = "test@example.com",
+            Password = "password",
+            FirstName = "Test",
+            LastName = "User",
+            Role = UserRoleConstants.Customer
+        };
+
+        // Act
+        var result = userCreateItem.HasRole(UserRoleConstants.Admin);
+
+        // Assert
+        Assert.That(result, Is.False);
     }
 }

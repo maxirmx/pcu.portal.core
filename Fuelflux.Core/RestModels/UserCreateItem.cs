@@ -36,13 +36,13 @@ public class UserCreateItem
     public string? Patronymic { get; set; }
     public string Email { get; set; } = String.Empty;
     public string Password { get; set; } = String.Empty;
-    public UserRoleConstants Role { get; set; }
+    public UserRoleConstants? Role { get; set; }
     public decimal? Allowance { get; set; }
     public string? Uid { get; set; }
 
     public bool HasRole(UserRoleConstants role)
     {
-        return Role == role;
+        return Role != null && Role.Value == role;
     }
 
     public override string ToString()

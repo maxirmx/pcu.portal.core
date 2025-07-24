@@ -495,6 +495,30 @@ public class UserInformationServiceTests
         Assert.That(result!.Role, Is.EqualTo(GetOperatorRole(ctx).Name));
     }
 
+    [Test]
+    public async Task UserViewItem_ReturnsCorrectData_WhenUserHasNoRole()
+    {
+        using var ctx = CreateContext();
+        var service = new UserInformationService(ctx);
+        var user = CreateUser(45, "norole@test.com", "password", "No", "Role", "Test", []);
+        user.Allowance = 12.34m; // This should not be shown for users without roles
+        user.Uid = "NOROLE123"; // This should not be shown for users without roles
+        ctx.Users.Add(user);
+        await ctx.SaveChangesAsync();
+
+        var result = await service.UserViewItem(45);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Id, Is.EqualTo(45));
+        Assert.That(result.Email, Is.EqualTo("norole@test.com"));
+        Assert.That(result.FirstName, Is.EqualTo("No"));
+        Assert.That(result.LastName, Is.EqualTo("Role"));
+        Assert.That(result.Patronymic, Is.EqualTo("Test"));
+        Assert.That(result.Role, Is.Null); // Should be null for users without roles
+        Assert.That(result.Allowance, Is.Null); // Should be null for users without roles
+        Assert.That(result.Uid, Is.Null); // Should be null for users without roles
+    }
+
     #endregion
 
     #region UserViewItems Tests
@@ -543,6 +567,32 @@ public class UserInformationServiceTests
 
         // Assert
         Assert.That(results, Is.Empty);
+    }
+
+    [Test]
+    public async Task UserViewItems_IncludesUsersWithoutRoles()
+    {
+        // Arrange
+        using var ctx = CreateContext();
+        var service = new UserInformationService(ctx);
+        ctx.Users.Add(CreateUser(60, "user1@test.com", "password", "User", "One", null, [GetOperatorRole(ctx)]));
+        ctx.Users.Add(CreateUser(61, "user2@test.com", "password", "User", "Two", null, [])); // User without role
+
+        await ctx.SaveChangesAsync();
+
+        // Act
+        var results = await service.UserViewItems();
+
+        // Assert
+        Assert.That(results, Has.Count.GreaterThanOrEqualTo(2));
+        Assert.That(results.Any(u => u.Id == 60), Is.True);
+        Assert.That(results.Any(u => u.Id == 61), Is.True);
+
+        var user1 = results.FirstOrDefault(u => u.Id == 60);
+        var user2 = results.FirstOrDefault(u => u.Id == 61);
+
+        Assert.That(user1?.Role, Is.EqualTo(GetOperatorRole(ctx).Name));
+        Assert.That(user2?.Role, Is.Null); // User without role should have null role
     }
 
     #endregion

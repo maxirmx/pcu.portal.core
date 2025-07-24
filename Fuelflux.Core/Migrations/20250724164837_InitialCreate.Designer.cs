@@ -12,7 +12,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Fuelflux.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250724155812_InitialCreate")]
+    [Migration("20250724164837_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -174,11 +174,17 @@ namespace Fuelflux.Core.Migrations
                         .HasColumnType("text")
                         .HasColumnName("patronymic");
 
+                    b.Property<int?>("RoleId")
+                        .HasColumnType("integer")
+                        .HasColumnName("role_id");
+
                     b.Property<string>("Uid")
                         .HasColumnType("text")
                         .HasColumnName("uid");
 
                     b.HasKey("Id");
+
+                    b.HasIndex("RoleId");
 
                     b.HasIndex("Uid");
 
@@ -194,41 +200,8 @@ namespace Fuelflux.Core.Migrations
                             LastName = "Samsonov",
                             Password = "$2b$12$eOXzlwFzyGVERe0sNwFeJO5XnvwsjloUpL4o2AIQ8254RT88MnsDi",
                             Patronymic = "",
+                            RoleId = 1,
                             Uid = ""
-                        });
-                });
-
-            modelBuilder.Entity("Fuelflux.Core.Models.UserRole", b =>
-                {
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer")
-                        .HasColumnName("user_id");
-
-                    b.Property<int>("RoleId")
-                        .HasColumnType("integer")
-                        .HasColumnName("role_id");
-
-                    b.HasKey("UserId", "RoleId");
-
-                    b.HasIndex("RoleId");
-
-                    b.ToTable("user_roles");
-
-                    b.HasData(
-                        new
-                        {
-                            UserId = 1,
-                            RoleId = 1
-                        },
-                        new
-                        {
-                            UserId = 1,
-                            RoleId = 2
-                        },
-                        new
-                        {
-                            UserId = 1,
-                            RoleId = 3
                         });
                 });
 
@@ -254,23 +227,13 @@ namespace Fuelflux.Core.Migrations
                     b.Navigation("FuelStation");
                 });
 
-            modelBuilder.Entity("Fuelflux.Core.Models.UserRole", b =>
+            modelBuilder.Entity("Fuelflux.Core.Models.User", b =>
                 {
                     b.HasOne("Fuelflux.Core.Models.Role", "Role")
-                        .WithMany("UserRoles")
-                        .HasForeignKey("RoleId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("Fuelflux.Core.Models.User", "User")
-                        .WithMany("UserRoles")
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
+                        .WithMany("Users")
+                        .HasForeignKey("RoleId");
 
                     b.Navigation("Role");
-
-                    b.Navigation("User");
                 });
 
             modelBuilder.Entity("Fuelflux.Core.Models.FuelStation", b =>
@@ -282,12 +245,7 @@ namespace Fuelflux.Core.Migrations
 
             modelBuilder.Entity("Fuelflux.Core.Models.Role", b =>
                 {
-                    b.Navigation("UserRoles");
-                });
-
-            modelBuilder.Entity("Fuelflux.Core.Models.User", b =>
-                {
-                    b.Navigation("UserRoles");
+                    b.Navigation("Users");
                 });
 #pragma warning restore 612, 618
         }

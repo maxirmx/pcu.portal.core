@@ -306,6 +306,46 @@ public class UsersControllerTests
         Assert.That(user.Uid, Is.EqualTo("CUSTOMER_UID_123"));
     }
 
+    [Test]
+    public async Task GetUser_ReturnsUserWithoutRole()
+    {
+        // Arrange
+        SetCurrentUserId(1); // Admin user
+        
+        var userWithoutRole = new User
+        {
+            Id = 4,
+            Email = "norole@example.com",
+            Password = BCrypt.Net.BCrypt.HashPassword("password123"),
+            FirstName = "No",
+            LastName = "Role",
+            Patronymic = "",
+            RoleId = null, // No role
+            Role = null
+        };
+        
+        _dbContext.Users.AddRange(_adminUser, userWithoutRole);
+        await _dbContext.SaveChangesAsync();
+
+        var expectedUser = new UserViewItem(userWithoutRole);
+
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(4, 1)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.UserViewItem(4)).ReturnsAsync(expectedUser);
+
+        // Act
+        var result = await _controller.GetUser(4); // Getting user without role
+
+        // Assert
+        Assert.That(result.Value, Is.Not.Null);
+        Assert.That(result.Value, Is.TypeOf<UserViewItem>());
+        var user = result.Value;
+        Assert.That(user!.Id, Is.EqualTo(4));
+        Assert.That(user.Email, Is.EqualTo("norole@example.com"));
+        Assert.That(user.Role, Is.Null); // No role
+        Assert.That(user.Allowance, Is.Null); // No allowance
+        Assert.That(user.Uid, Is.Null); // No UID
+    }
+
     #endregion
 
     #region PostUser Tests
@@ -407,6 +447,50 @@ public class UsersControllerTests
         Assert.That(result.Result, Is.TypeOf<ObjectResult>());
         var objectResult = result.Result as ObjectResult;
         Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status409Conflict));
+    }
+
+    [Test]
+    public async Task PostUser_CreatesUserWithoutRole_WhenUserIsAdmin()
+    {
+        // Arrange
+        SetCurrentUserId(1); // Admin user
+        _dbContext.Users.Add(_adminUser);
+        await _dbContext.SaveChangesAsync();
+
+        var newUser = new UserCreateItem
+        {
+            Email = "norole@example.com",
+            Password = "newpassword",
+            FirstName = "No",
+            LastName = "Role",
+            Patronymic = "",
+            Role = null // No role assigned
+        };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
+        _mockUserInformationService.Setup(x => x.Exists("norole@example.com")).Returns(false);
+
+        // Act
+        var result = await _controller.PostUser(newUser);
+
+        // Assert
+        Assert.That(result.Result, Is.TypeOf<CreatedAtActionResult>());
+        var createdAtActionResult = result.Result as CreatedAtActionResult;
+        Assert.That(createdAtActionResult!.ActionName, Is.EqualTo(nameof(UsersController.PostUser)));
+        Assert.That(createdAtActionResult.Value, Is.TypeOf<Reference>());
+
+        var reference = createdAtActionResult.Value as Reference;
+        Assert.That(reference!.Id, Is.GreaterThan(0));
+
+        // Verify user was added to database
+        var savedUser = await _dbContext.Users.FindAsync(reference.Id);
+        Assert.That(savedUser, Is.Not.Null);
+        Assert.That(savedUser!.Email, Is.EqualTo("norole@example.com"));
+        Assert.That(savedUser.RoleId, Is.Null); // No role assigned
+        Assert.That(savedUser.Allowance, Is.Null); // No allowance for users without roles
+        Assert.That(savedUser.Uid, Is.Null); // No UID for users without roles
+        // Check that password was hashed
+        Assert.That(BCrypt.Net.BCrypt.Verify("newpassword", savedUser.Password), Is.True);
     }
 
     #endregion
@@ -744,6 +828,66 @@ public class UsersControllerTests
 
         // Act
         var result = await _controller.PutUser(3, updateItem);
+
+        // Assert
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var objectResult = result as ObjectResult;
+        Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task PutUser_AllowsAdminToRemoveRole()
+    {
+        // Arrange
+        SetCurrentUserId(1); // Admin user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
+        await _dbContext.SaveChangesAsync();
+
+        var updateItem = new UserUpdateItem
+        {
+            FirstName = "Updated",
+            Role = null // Removing role
+        };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 1)).ReturnsAsync(new ActionResult<bool>(true));
+
+        // Act
+        var result = await _controller.PutUser(2, updateItem);
+
+        // Assert
+        Assert.That(result, Is.TypeOf<NoContentResult>());
+
+        // Verify user was updated
+        var updatedUser = await _dbContext.Users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Id == 2);
+
+        Assert.That(updatedUser, Is.Not.Null);
+        Assert.That(updatedUser!.FirstName, Is.EqualTo("Updated"));
+        Assert.That(updatedUser.RoleId, Is.Null); // Role removed
+        Assert.That(updatedUser.Allowance, Is.Null); // Allowance cleared
+        Assert.That(updatedUser.Uid, Is.Null); // UID cleared
+    }
+
+    [Test]
+    public async Task PutUser_ReturnsForbidden_WhenNonAdminTriesToChangeToNoRole()
+    {
+        // Arrange
+        SetCurrentUserId(2); // Operator user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
+        await _dbContext.SaveChangesAsync();
+
+        var updateItem = new UserUpdateItem
+        {
+            FirstName = "Operator",
+            Role = null // Trying to remove role
+        };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(2)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.PutUser(2, updateItem);
 
         // Assert
         Assert.That(result, Is.TypeOf<ObjectResult>());

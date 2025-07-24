@@ -132,7 +132,7 @@ public class UsersController(
             Password = hashToStoreInDb,
             Allowance = user.HasRole(UserRoleConstants.Customer) ? user.Allowance : null,
             Uid = user.HasRole(UserRoleConstants.Customer) || user.HasRole(UserRoleConstants.Operator) ? user.Uid : null,
-            RoleId = (int)user.Role
+            RoleId = user.Role != null ? (int)user.Role.Value : null
         };
 
         _db.Users.Add(ur);
@@ -159,17 +159,18 @@ public class UsersController(
             return _404User(id);
         }
         
-        bool adminRequired = update.IsAdministrator() && !user.IsAdministrator();
         bool isAdmin = await _userInformationService.CheckAdmin(_curUserId);
         
-        // Check if user is trying to change Allowance or Uid without being admin
-        bool tryingToChangeAllowanceOrUid = update.Allowance != null || update.Uid != null;
-        if (tryingToChangeAllowanceOrUid && !isAdmin)
+        // Check if user is trying to change admin-only properties without being admin
+        bool tryingToChangeAdminOnlyProperties = update.Allowance != null || update.Uid != null || update.Role != null;
+        if (tryingToChangeAdminOnlyProperties && !isAdmin)
         {
-            _logger.LogDebug("PutUser returning '403 Forbidden' - non-admin trying to change Allowance or Uid");
+            _logger.LogDebug("PutUser returning '403 Forbidden' - non-admin trying to change admin-only properties (Role, Allowance, or Uid)");
             return _403();
         }
 
+        bool adminRequired = update.IsAdministrator() && !user.IsAdministrator();
+        
         ActionResult<bool> ch;
         ch = adminRequired ? await _userInformationService.CheckAdmin(_curUserId) :
                              await _userInformationService.CheckAdminOrSameUser(id, _curUserId);
@@ -189,14 +190,14 @@ public class UsersController(
         if (update.LastName != null) user.LastName = update.LastName;
         if (update.Patronymic != null) user.Patronymic = update.Patronymic;
 
-        if (update.Role != null)
-        {
-            user.RoleId = (int)update.Role.Value;
-        }
-
-        // Only administrators can change Allowance and Uid
+        // Only administrators can change Role, Allowance and Uid
         if (isAdmin)
         {
+            if (update.Role != null)
+            {
+                user.RoleId = (int)update.Role.Value;
+            }
+
             bool isCustomer = update.Role != null
                 ? update.Role.Value == UserRoleConstants.Customer
                 : user.HasRole(UserRoleConstants.Customer);
