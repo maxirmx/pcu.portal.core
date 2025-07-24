@@ -50,6 +50,10 @@ namespace Fuelflux.Core.Migrations
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
 
+                    b.Property<decimal>("Allowance")
+                        .HasColumnType("numeric(10,2)")
+                        .HasColumnName("volume");
+
                     b.Property<int>("FuelStationId")
                         .HasColumnType("integer")
                         .HasColumnName("fuel_station_id");
@@ -79,9 +83,9 @@ namespace Fuelflux.Core.Migrations
                         .HasColumnType("integer")
                         .HasColumnName("fuel_station_id");
 
-                    b.Property<Guid>("Guid")
+                    b.Property<Guid>("Uid")
                         .HasColumnType("uuid")
-                        .HasColumnName("guid");
+                        .HasColumnName("uid");
 
                     b.HasKey("Id");
 

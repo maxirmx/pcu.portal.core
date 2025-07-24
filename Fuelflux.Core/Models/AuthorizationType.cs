@@ -1,4 +1,4 @@
-// Redistribution and use in source and binary forms, with or without
+﻿// Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
 // 1. Redistributions of source code must retain the above copyright
@@ -19,20 +19,10 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-using System.ComponentModel.DataAnnotations.Schema;
+namespace Fuelflux.Core.Authorization;
 
-namespace Fuelflux.Core.Models;
-
-[Table("pump_controllers")]
-public class PumpController
+public enum AuthorizationType
 {
-    [Column("id")]
-    public int Id { get; set; }
-
-    [Column("uid")]
-    public required string Uid { get; set; }
-
-    [Column("fuel_station_id")]
-    public int FuelStationId { get; set; }
-    public FuelStation FuelStation { get; set; } = null!;
+    User,
+    Device
 }

@@ -48,6 +48,7 @@ namespace Fuelflux.Core.Migrations
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
                     number = table.Column<decimal>(type: "numeric(3,0)", nullable: false),
+                    volume = table.Column<decimal>(type: "numeric(10,2)", nullable: false),
                     fuel_station_id = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>
@@ -67,7 +68,7 @@ namespace Fuelflux.Core.Migrations
                 {
                     id = table.Column<int>(type: "integer", nullable: false)
                         .Annotation("Npgsql:ValueGenerationStrategy", NpgsqlValueGenerationStrategy.IdentityByDefaultColumn),
-                    guid = table.Column<Guid>(type: "uuid", nullable: false),
+                    uid = table.Column<Guid>(type: "uuid", nullable: false),
                     fuel_station_id = table.Column<int>(type: "integer", nullable: false)
                 },
                 constraints: table =>

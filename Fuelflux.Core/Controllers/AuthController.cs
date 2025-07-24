@@ -34,7 +34,7 @@ using Fuelflux.Core.Data;
 namespace Fuelflux.Core.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(AuthorizationType.User)]
 [Route("api/[controller]")]
 public class AuthController(
     AppDbContext db, 

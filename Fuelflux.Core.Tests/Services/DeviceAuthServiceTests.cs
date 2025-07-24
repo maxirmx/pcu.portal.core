@@ -1,3 +1,28 @@
+// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
+// All rights reserved.
+// This file is a part of Fuelflux Core application
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+// TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS
+// BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
 using System;
 using Fuelflux.Core.Services;
 using Fuelflux.Core.Settings;
@@ -13,8 +38,8 @@ public class DeviceAuthServiceTests
 {
     private DeviceAuthService _service = null!;
 
-    private Fuelflux.Core.Models.PumpController _pump = null!;
-    private Fuelflux.Core.Models.User _user = null!;
+    private PumpController _pump = null!;
+    private User _user = null!;
 
     [SetUp]
     public void Setup()
@@ -24,16 +49,16 @@ public class DeviceAuthServiceTests
         var logger = new LoggerFactory().CreateLogger<DeviceAuthService>();
         _service = new DeviceAuthService(opts, appOpts, logger);
 
-        _pump = new Fuelflux.Core.Models.PumpController
+        _pump = new PumpController
         {
             Id = 1,
-            Guid = Guid.NewGuid(),
+            Uid = Guid.NewGuid().ToString(),
             FuelStationId = 1,
-            FuelStation = new Fuelflux.Core.Models.FuelStation { Id = 1, Name = "fs" }
+            FuelStation = new FuelStation { Id = 1, Name = "fs" }
         };
 
-        var role = new Fuelflux.Core.Models.Role { Id = 1, RoleId = UserRoleConstants.Operator, Name = "op" };
-        _user = new Fuelflux.Core.Models.User
+        var role = new Role { Id = 1, RoleId = UserRoleConstants.Operator, Name = "op" };
+        _user = new User
         {
             Id = 1,
             Email = "a@b.c",
@@ -69,15 +94,15 @@ public class DeviceAuthServiceTests
         var appOpts = Options.Create(new AppSettings { Secret = "secret" });
         var logger = new LoggerFactory().CreateLogger<DeviceAuthService>();
         var svc = new DeviceAuthService(opts, appOpts, logger);
-        var pump = new Fuelflux.Core.Models.PumpController
+        var pump = new PumpController
         {
             Id = 2,
-            Guid = Guid.NewGuid(),
+            Uid = Guid.NewGuid().ToString(),
             FuelStationId = 2,
-            FuelStation = new Fuelflux.Core.Models.FuelStation { Id = 2, Name = "fs" }
+            FuelStation = new FuelStation { Id = 2, Name = "fs" }
         };
-        var role = new Fuelflux.Core.Models.Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "op" };
-        var user = new Fuelflux.Core.Models.User
+        var role = new Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "op" };
+        var user = new User
         {
             Id = 2,
             Email = "x@y.z",

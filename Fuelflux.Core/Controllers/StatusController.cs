@@ -34,7 +34,7 @@ using Microsoft.EntityFrameworkCore;
 namespace Fuelflux.Core.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(AuthorizationType.User)]
 [Route("api/[controller]")]
 public class StatusController(
     AppDbContext db,

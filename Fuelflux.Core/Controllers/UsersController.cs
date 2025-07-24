@@ -39,7 +39,7 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 namespace Fuelflux.Core.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(AuthorizationType.User)]
 [Route("api/[controller]")]
 [Produces("application/json")]
 [ProducesResponseType(StatusCodes.Status401Unauthorized, Type = typeof(ErrMessage))]

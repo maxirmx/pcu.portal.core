@@ -9,6 +9,7 @@ using Fuelflux.Core.Models;
 namespace Fuelflux.Core.Controllers;
 
 [ApiController]
+[Authorize(AuthorizationType.Device)]
 [Route("api/[controller]")]
 public class PumpController(IDeviceAuthService authService, AppDbContext db, ILogger<PumpController> logger) : ControllerBase
 {
@@ -22,7 +23,7 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
     [ProducesResponseType(StatusCodes.Status401Unauthorized, Type = typeof(ErrMessage))]
     public async Task<ActionResult<TokenResponse>> Authorize(DeviceAuthorizeRequest request)
     {
-        var pump = await _db.PumpControllers.AsNoTracking().FirstOrDefaultAsync(p => p.Guid == request.PumpControllerGuid);
+        var pump = await _db.PumpControllers.AsNoTracking().FirstOrDefaultAsync(p => p.Uid == request.PumpControllerUid);
         var user = await _db.Users.AsNoTracking().Include(u => u.Role).FirstOrDefaultAsync(u => u.Uid == request.UserUid);
 
         if (pump == null || user == null || !(user.IsOperator() || user.IsCustomer()))

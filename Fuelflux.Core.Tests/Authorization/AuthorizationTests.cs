@@ -93,7 +93,8 @@ public class AuthorizeAttributeTests
         // Arrange
         var items = new Dictionary<object, object?>();
         var context = CreateContext(items, allowAnonymous: true);
-        var attribute = new AuthorizeAttribute();
+        // Update the instantiation of AuthorizeAttribute to include the required parameter 'authorizationType'
+        var attribute = new AuthorizeAttribute(AuthorizationType.User);
 
         // Act
         attribute.OnAuthorization(context);
@@ -108,7 +109,7 @@ public class AuthorizeAttributeTests
         // Arrange
         var items = new Dictionary<object, object?>();
         var context = CreateContext(items);
-        var attribute = new AuthorizeAttribute();
+        var attribute = new AuthorizeAttribute(AuthorizationType.User);
 
         // Act
         attribute.OnAuthorization(context);
@@ -131,7 +132,7 @@ public class AuthorizeAttributeTests
             ["UserId"] = 1
         };
         var context = CreateContext(items);
-        var attribute = new AuthorizeAttribute();
+        var attribute = new AuthorizeAttribute(AuthorizationType.User);
 
         // Act
         attribute.OnAuthorization(context);

@@ -38,7 +38,7 @@ public class PumpControllerTests
         _service = new DeviceAuthService(opts, appOpts, new LoggerFactory().CreateLogger<DeviceAuthService>());
 
         var fs = new FuelStation { Id = 1, Name = "fs" };
-        _pump = new PumpModel { Id = 1, Guid = Guid.NewGuid(), FuelStationId = fs.Id, FuelStation = fs };
+        _pump = new PumpModel { Id = 1, Uid = Guid.NewGuid().ToString(), FuelStationId = fs.Id, FuelStation = fs };
         var role = new Role { Id = 1, RoleId = UserRoleConstants.Operator, Name = "op" };
         _user = new User
         {
@@ -74,7 +74,7 @@ public class PumpControllerTests
     [Test]
     public async Task Authorize_ReturnsValidToken()
     {
-        var req = new DeviceAuthorizeRequest { PumpControllerGuid = _pump.Guid, UserUid = _user.Uid! };
+        var req = new DeviceAuthorizeRequest { PumpControllerUid = _pump.Uid.ToString(), UserUid = _user.Uid! };
         var result = await _controller.Authorize(req);
         Assert.That(result.Result, Is.TypeOf<OkObjectResult>());
         var token = ((result.Result as OkObjectResult)!.Value as TokenResponse)!.Token;
@@ -86,6 +86,9 @@ public class PumpControllerTests
     {
         var token = _service.Authorize(_pump, _user);
         var res = _controller.Deauthorize(new TokenRequest { Token = token });
+
+        await Task.Delay(1);
+
         Assert.That(res, Is.TypeOf<OkResult>());
         Assert.That(_service.Validate(token), Is.False);
     }
@@ -93,7 +96,7 @@ public class PumpControllerTests
     [Test]
     public async Task Authorize_ReturnsUnauthorized_WhenPumpMissing()
     {
-        var req = new DeviceAuthorizeRequest { PumpControllerGuid = Guid.NewGuid(), UserUid = _user.Uid! };
+        var req = new DeviceAuthorizeRequest { PumpControllerUid = Guid.NewGuid().ToString(), UserUid = _user.Uid! };
         var result = await _controller.Authorize(req);
         Assert.That(result.Result, Is.TypeOf<ObjectResult>());
         var obj = result.Result as ObjectResult;
@@ -103,7 +106,7 @@ public class PumpControllerTests
     [Test]
     public async Task Authorize_ReturnsUnauthorized_WhenUserMissing()
     {
-        var req = new DeviceAuthorizeRequest { PumpControllerGuid = _pump.Guid, UserUid = "wrong" };
+        var req = new DeviceAuthorizeRequest { PumpControllerUid = _pump.Uid.ToString(), UserUid = "wrong" };
         var result = await _controller.Authorize(req);
         Assert.That(result.Result, Is.TypeOf<ObjectResult>());
         var obj = result.Result as ObjectResult;
