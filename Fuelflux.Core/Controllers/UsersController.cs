@@ -131,21 +131,13 @@ public class UsersController(
             Email = user.Email,
             Password = hashToStoreInDb,
             Allowance = user.HasRole(UserRoleConstants.Customer) ? user.Allowance : null,
-            Uid = user.HasRole(UserRoleConstants.Customer) || user.HasRole(UserRoleConstants.Operator) ? user.Uid : null
+            Uid = user.HasRole(UserRoleConstants.Customer) || user.HasRole(UserRoleConstants.Operator) ? user.Uid : null,
+            RoleId = (int)user.Role
         };
 
         _db.Users.Add(ur);
         await _db.SaveChangesAsync(); // This assigns ur.Id
 
-        if (user.Roles != null && user.Roles.Count > 0)
-        {
-            var rolesInDb = _db.Roles.Where(r => user.Roles.Contains(r.RoleId)).ToList();
-            foreach (var role in rolesInDb)
-            {
-                _db.UserRoles.Add(new UserRole { UserId = ur.Id, RoleId = role.Id });
-            }
-            await _db.SaveChangesAsync(); // Save the user roles
-        }
 
         var reference = new Reference { Id = ur.Id };
         _logger.LogDebug("PostUser returning: {res}", reference.ToString());
@@ -197,30 +189,20 @@ public class UsersController(
         if (update.LastName != null) user.LastName = update.LastName;
         if (update.Patronymic != null) user.Patronymic = update.Patronymic;
 
-        // Copy user roles from update to database
-        if (update.Roles != null && update.Roles.Count > 0)
+        if (update.Role != null)
         {
-            // Remove existing roles
-            var existingUserRoles = _db.UserRoles.Where(ur => ur.UserId == user.Id);
-            _db.UserRoles.RemoveRange(existingUserRoles);
-
-            // Add new roles
-            var rolesInDb = _db.Roles.Where(r => update.Roles.Contains(r.RoleId)).ToList();
-            foreach (var role in rolesInDb)
-            {
-                _db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = role.Id });
-            }
+            user.RoleId = (int)update.Role.Value;
         }
 
         // Only administrators can change Allowance and Uid
         if (isAdmin)
         {
-            bool isCustomer = update.Roles != null
-                ? update.Roles.Contains(UserRoleConstants.Customer)
+            bool isCustomer = update.Role != null
+                ? update.Role.Value == UserRoleConstants.Customer
                 : user.HasRole(UserRoleConstants.Customer);
 
-            bool hasUidAccess = update.Roles != null
-                ? update.Roles.Contains(UserRoleConstants.Customer) || update.Roles.Contains(UserRoleConstants.Operator)
+            bool hasUidAccess = update.Role != null
+                ? (update.Role.Value == UserRoleConstants.Customer || update.Role.Value == UserRoleConstants.Operator)
                 : user.HasUidAccess();
 
             if (isCustomer)

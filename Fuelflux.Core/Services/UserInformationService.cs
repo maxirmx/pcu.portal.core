@@ -44,8 +44,7 @@ namespace Fuelflux.Core.Services
         {
             var user = await _context.Users
                 .AsNoTracking()
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
+                .Include(u => u.Role)
                 .Where(x => x.Id == cuid)
                 .FirstOrDefaultAsync();
             return user != null && user.IsAdministrator();
@@ -55,8 +54,7 @@ namespace Fuelflux.Core.Services
         {
             var user = await _context.Users
                 .AsNoTracking()
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
+                .Include(u => u.Role)
                 .Where(x => x.Id == cuid)
                 .FirstOrDefaultAsync();
             return user != null && user.IsOperator();
@@ -90,8 +88,7 @@ namespace Fuelflux.Core.Services
         {
             var user = await _context.Users
                 .AsNoTracking()
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
+                .Include(u => u.Role)
                 .Where(x => x.Id == id)
                 .Select(x => new UserViewItem(x))
                 .FirstOrDefaultAsync();
@@ -102,8 +99,7 @@ namespace Fuelflux.Core.Services
         {
             return await _context.Users
                 .AsNoTracking()
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
+                .Include(u => u.Role)
                 .Select(x => new UserViewItem(x))
                 .ToListAsync();
         }

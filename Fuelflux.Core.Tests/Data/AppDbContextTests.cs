@@ -68,21 +68,22 @@ public class UserInformationServiceTests
 
     private static User CreateUser(int id, string email, string password, string firstName, string lastName, string? patronymic, IEnumerable<Role> roles)
     {
-        return new User
+        var role = roles.FirstOrDefault();
+        var user = new User
         {
             Id = id,
             Email = email,
             Password = password,
             FirstName = firstName,
             LastName = lastName,
-            Patronymic = patronymic ?? "",
-            UserRoles = [.. roles.Select(r => new UserRole
-            {
-                UserId = id,
-                RoleId = r.Id,
-                Role = r
-            })]
+            Patronymic = patronymic ?? ""
         };
+        if (role != null)
+        {
+            user.RoleId = role.Id;
+            user.Role = role;
+        }
+        return user;
     }
 
     #region CheckSameUser Tests
@@ -405,8 +406,7 @@ public class UserInformationServiceTests
         Assert.That(result.FirstName, Is.EqualTo("View"));
         Assert.That(result.LastName, Is.EqualTo("Item"));
         Assert.That(result.Patronymic, Is.EqualTo("Test"));
-        Assert.That(result.Roles, Has.Count.EqualTo(1));
-        Assert.That(result.Roles.First(), Is.EqualTo(GetOperatorRole(ctx).Name));
+        Assert.That(result.Role, Is.EqualTo(GetOperatorRole(ctx).Name));
     }
 
     [Test]
@@ -481,23 +481,18 @@ public class UserInformationServiceTests
     }
 
     [Test]
-    public async Task UserViewItem_ReturnsCorrectRoles_WhenUserHasMultipleRoles()
+    public async Task UserViewItem_ReturnsCorrectRole_WhenUserExists()
     {
-        // Arrange
         using var ctx = CreateContext();
         var service = new UserInformationService(ctx);
-        var user = CreateUser(41, "multirole@test.com", "password", "Multi", "Role", "", [GetOperatorRole(ctx), GetAdminRole(ctx)]);
+        var user = CreateUser(41, "multirole@test.com", "password", "Multi", "Role", "", [GetOperatorRole(ctx)]);
         ctx.Users.Add(user);
         await ctx.SaveChangesAsync();
 
-        // Act
         var result = await service.UserViewItem(41);
 
-        // Assert
         Assert.That(result, Is.Not.Null);
-        Assert.That(result!.Roles, Has.Count.EqualTo(2));
-        Assert.That(result.Roles, Contains.Item(GetOperatorRole(ctx).Name));
-        Assert.That(result.Roles, Contains.Item(GetAdminRole(ctx).Name));
+        Assert.That(result!.Role, Is.EqualTo(GetOperatorRole(ctx).Name));
     }
 
     #endregion
@@ -526,8 +521,8 @@ public class UserInformationServiceTests
         var user1 = results.FirstOrDefault(u => u.Id == 50);
         var user2 = results.FirstOrDefault(u => u.Id == 51);
 
-        Assert.That(user1?.Roles.Contains(GetOperatorRole(ctx).Name), Is.True);
-        Assert.That(user2?.Roles.Contains(GetAdminRole(ctx).Name), Is.True);
+        Assert.That(user1?.Role, Is.EqualTo(GetOperatorRole(ctx).Name));
+        Assert.That(user2?.Role, Is.EqualTo(GetAdminRole(ctx).Name));
     }
 
     [Test]

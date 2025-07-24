@@ -84,10 +84,8 @@ public class AuthControllerTests
             FirstName = "Test",
             LastName = "User",
             Patronymic = "",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = 1, Role = _testRole }
-            ]
+            RoleId = 1,
+            Role = _testRole
         };
     }
 
@@ -125,7 +123,7 @@ public class AuthControllerTests
         var userView = result.Value as UserViewItemWithJWT;
         Assert.That(userView!.Token, Is.EqualTo("test-jwt-token"));
         Assert.That(userView.Email, Is.EqualTo("test@example.com"));
-        Assert.That(userView.Roles, Contains.Item(_testRole.Name));
+        Assert.That(userView.Role, Is.EqualTo(_testRole.Name));
     }
 
     [Test]
@@ -185,8 +183,7 @@ public class AuthControllerTests
             Password = BCrypt.Net.BCrypt.HashPassword("password123"),
             FirstName = "No",
             LastName = "Roles",
-            Patronymic = "",
-            UserRoles = []
+            Patronymic = ""
         };
 
         _dbContext.Users.Add(userWithoutRoles);

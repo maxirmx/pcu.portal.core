@@ -88,10 +88,8 @@ public class UsersControllerTests
             FirstName = "Admin",
             LastName = "User",
             Patronymic = "",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = _adminRole.Id, Role = _adminRole }
-            ]
+            RoleId = _adminRole.Id,
+            Role = _adminRole
         };
 
         _operatorUser = new User
@@ -102,10 +100,8 @@ public class UsersControllerTests
             FirstName = "Operator",
             LastName = "User",
             Patronymic = "",
-            UserRoles =
-            [
-                new UserRole { UserId = 2, RoleId = _operatorRole.Id, Role = _operatorRole }
-            ]
+            RoleId = _operatorRole.Id,
+            Role = _operatorRole
         };
 
         _customerUser = new User
@@ -116,10 +112,8 @@ public class UsersControllerTests
             FirstName = "Customer",
             LastName = "User",
             Patronymic = "",
-            UserRoles =
-            [
-                new UserRole { UserId = 3, RoleId = _customerRole.Id, Role = _customerRole }
-            ]
+            RoleId = _customerRole.Id,
+            Role = _customerRole
         };
 
         // Setup mocks
@@ -331,7 +325,7 @@ public class UsersControllerTests
             FirstName = "New",
             LastName = "User",
             Patronymic = "",
-            Roles = [ UserRoleConstants.Customer ] // Assigning role by enum value
+            Role = UserRoleConstants.Customer
         };
 
         _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
@@ -355,7 +349,7 @@ public class UsersControllerTests
         Assert.That(savedUser!.Email, Is.EqualTo("new@example.com"));
         // Check that password was hashed
         Assert.That(BCrypt.Net.BCrypt.Verify("newpassword", savedUser.Password), Is.True);
-        Assert.That(savedUser.UserRoles, Has.Count.EqualTo(1));
+        Assert.That(savedUser.RoleId, Is.EqualTo((int)UserRoleConstants.Customer));
     }
 
     [Test]
@@ -432,7 +426,7 @@ public class UsersControllerTests
             FirstName = "Updated",
             LastName = "Name",
             Email = "updated@example.com",
-            Roles = [UserRoleConstants.Customer]
+            Role = UserRoleConstants.Customer
         };
 
         _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 1)).ReturnsAsync(new ActionResult<bool>(true));
@@ -446,16 +440,14 @@ public class UsersControllerTests
 
         // Verify user was updated
         var updatedUser = await _dbContext.Users
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
+            .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.Id == 2);
 
         Assert.That(updatedUser, Is.Not.Null);
         Assert.That(updatedUser!.FirstName, Is.EqualTo("Updated"));
         Assert.That(updatedUser.LastName, Is.EqualTo("Name"));
         Assert.That(updatedUser.Email, Is.EqualTo("updated@example.com"));
-        Assert.That(updatedUser.UserRoles, Has.Count.EqualTo(1));
-        Assert.That(updatedUser.UserRoles.First().Role!.RoleId, Is.EqualTo(UserRoleConstants.Customer));
+        Assert.That(updatedUser.RoleId, Is.EqualTo((int)UserRoleConstants.Customer));
     }
 
     [Test]
@@ -599,7 +591,7 @@ public class UsersControllerTests
         var updateItem = new UserUpdateItem
         {
             FirstName = "Try",
-            Roles = [UserRoleConstants.Admin] // Trying to become admin
+            Role = UserRoleConstants.Admin // Trying to become admin
         };
 
         _mockUserInformationService.Setup(x => x.CheckAdmin(2)).ReturnsAsync(false);
@@ -710,7 +702,7 @@ public class UsersControllerTests
             FirstName = "AdminUpdated",
             Allowance = 200.75m,
             Uid = "ADMIN_SET_UID",
-            Roles = [UserRoleConstants.Customer] // Making user customer to allow allowance
+            Role = UserRoleConstants.Customer // Making user customer to allow allowance
         };
 
         _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
@@ -724,8 +716,7 @@ public class UsersControllerTests
 
         // Verify user was updated including allowance and uid
         var updatedUser = await _dbContext.Users
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
+            .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.Id == 3);
 
         Assert.That(updatedUser, Is.Not.Null);
