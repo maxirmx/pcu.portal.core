@@ -52,7 +52,8 @@ namespace Fuelflux.Core.Data
             modelBuilder.Entity<Role>().HasData(
                 new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "Администратор системы" },
                 new Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "Оператор АЗС" },
-                new Role { Id = 3, RoleId = UserRoleConstants.Customer, Name = "Клиент" }
+                new Role { Id = 3, RoleId = UserRoleConstants.Customer, Name = "Клиент" },
+                new Role { Id = 4, RoleId = UserRoleConstants.Controller, Name = "Котроллер ТРК" }
             );
 
             modelBuilder.Entity<User>().HasData(
