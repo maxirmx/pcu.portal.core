@@ -37,7 +37,9 @@ namespace Fuelflux.Core.Migrations
                     last_name = table.Column<string>(type: "text", nullable: false),
                     patronymic = table.Column<string>(type: "text", nullable: false),
                     email = table.Column<string>(type: "text", nullable: false),
-                    password = table.Column<string>(type: "text", nullable: false)
+                    password = table.Column<string>(type: "text", nullable: false),
+                    allowance = table.Column<decimal>(type: "numeric(5,2)", nullable: true),
+                    uid = table.Column<string>(type: "text", nullable: true)
                 },
                 constraints: table =>
                 {
@@ -80,8 +82,8 @@ namespace Fuelflux.Core.Migrations
 
             migrationBuilder.InsertData(
                 table: "users",
-                columns: new[] { "id", "email", "first_name", "last_name", "password", "patronymic" },
-                values: new object[] { 1, "maxirmx@sw.consulting", "Maxim", "Samsonov", "$2b$12$eOXzlwFzyGVERe0sNwFeJO5XnvwsjloUpL4o2AIQ8254RT88MnsDi", "" });
+                columns: new[] { "id", "allowance", "email", "first_name", "last_name", "password", "patronymic", "uid" },
+                values: new object[] { 1, 0m, "maxirmx@sw.consulting", "Maxim", "Samsonov", "$2b$12$eOXzlwFzyGVERe0sNwFeJO5XnvwsjloUpL4o2AIQ8254RT88MnsDi", "", "" });
 
             migrationBuilder.InsertData(
                 table: "user_roles",
@@ -97,6 +99,11 @@ namespace Fuelflux.Core.Migrations
                 name: "IX_user_roles_role_id",
                 table: "user_roles",
                 column: "role_id");
+
+            migrationBuilder.CreateIndex(
+                name: "IX_users_uid",
+                table: "users",
+                column: "uid");
         }
 
         /// <inheritdoc />

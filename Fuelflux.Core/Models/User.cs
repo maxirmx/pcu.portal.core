@@ -49,10 +49,10 @@ namespace Fuelflux.Core.Models
         public required string Password { get; set; }
 
         [Column("allowance", TypeName = "numeric(5,2)")]
-        public decimal Allowance { get; set; }
+        public decimal? Allowance { get; set; }
 
         [Column("uid")]
-        public string Uid { get; set; } = "";
+        public string? Uid { get; set; }
 
         public ICollection<UserRole> UserRoles { get; set; } = [];
 
