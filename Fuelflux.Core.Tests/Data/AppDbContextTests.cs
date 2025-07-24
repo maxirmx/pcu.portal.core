@@ -410,6 +410,25 @@ public class UserInformationServiceTests
     }
 
     [Test]
+    public async Task UserViewItem_IncludesCustomerData_WhenUserIsCustomer()
+    {
+        using var ctx = CreateContext();
+        var service = new UserInformationService(ctx);
+        var customerRole = ctx.Roles.Single(r => r.RoleId == UserRoleConstants.Customer);
+        var user = CreateUser(42, "cust@test.com", "password", "Cust", "User", "", [customerRole]);
+        user.Allowance = 12.34m;
+        user.Uid = "ABCDEFGH";
+        ctx.Users.Add(user);
+        await ctx.SaveChangesAsync();
+
+        var result = await service.UserViewItem(42);
+
+        Assert.That(result, Is.Not.Null);
+        Assert.That(result!.Allowance, Is.EqualTo(12.34m));
+        Assert.That(result.Uid, Is.EqualTo("ABCDEFGH"));
+    }
+
+    [Test]
     public async Task UserViewItem_ReturnsNull_WhenUserDoesNotExist()
     {
         // Arrange

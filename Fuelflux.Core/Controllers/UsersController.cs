@@ -130,6 +130,8 @@ public class UsersController(
             Patronymic = user.Patronymic ?? "",
             Email = user.Email,
             Password = hashToStoreInDb,
+            Allowance = user.HasRole(UserRoleConstants.Customer) ? (user.Allowance ?? 0m) : 0m,
+            Uid = user.HasRole(UserRoleConstants.Customer) ? (user.Uid ?? "") : ""
         };
 
         _db.Users.Add(ur);
@@ -198,6 +200,16 @@ public class UsersController(
             {
                 _db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = role.Id });
             }
+        }
+
+        bool isCustomer = update.Roles != null
+            ? update.Roles.Contains(UserRoleConstants.Customer)
+            : user.HasRole(UserRoleConstants.Customer);
+
+        if (isCustomer)
+        {
+            if (update.Allowance != null) user.Allowance = update.Allowance.Value;
+            if (update.Uid != null) user.Uid = update.Uid;
         }
 
         if (update.Password != null) user.Password = BCrypt.Net.BCrypt.HashPassword(update.Password);
