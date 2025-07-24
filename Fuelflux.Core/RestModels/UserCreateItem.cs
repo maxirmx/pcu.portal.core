@@ -34,15 +34,19 @@ public class UserCreateItem
     public string? FirstName { get; set; }
     public string? LastName { get; set; }
     public string? Patronymic { get; set; }
-    public string Email { get; set; } = "";
-    public string Password { get; set; } = "";
+    public string Email { get; set; } = String.Empty;
+    public string Password { get; set; } = String.Empty;
     public UserRoleConstants Role { get; set; }
     public decimal? Allowance { get; set; }
     public string? Uid { get; set; }
-    
+
+    public bool HasRole(UserRoleConstants role)
+    {
+        return Role == role;
+    }
 
     public override string ToString()
     {
-        return JsonSerializer.Serialize(this, JOptions.DefaultOptions);
+        return $"{FirstName} {LastName} ({Email})";
     }
 }

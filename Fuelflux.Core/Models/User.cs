@@ -55,9 +55,9 @@ namespace Fuelflux.Core.Models
         public string? Uid { get; set; }
 
         [Column("role_id")]
-        public int RoleId { get; set; }
+        public int? RoleId { get; set; }
 
-        public virtual Role Role { get; set; } = null!;
+        public Role? Role { get; set; }
 
         public bool HasAnyRole() => Role != null;
 

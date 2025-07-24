@@ -37,7 +37,7 @@ public class UserViewItem(User user)
     public string LastName { get; set; } = user.LastName;
     public string Patronymic { get; set; } = user.Patronymic;
     public string Email { get; set; } = user.Email;
-    public string Role { get; set; } = user.Role.Name;
+    public string? Role { get; set; } = user.Role?.Name;
     public decimal? Allowance { get; set; } =
         user.HasRole(UserRoleConstants.Customer) ? user.Allowance : null;
     public string? Uid { get; set; } =
