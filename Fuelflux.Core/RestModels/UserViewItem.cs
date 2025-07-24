@@ -39,6 +39,10 @@ public class UserViewItem(User user)
     public string Email { get; set; } = user.Email;
     public List<string> Roles { get; set; } =
         [.. user.UserRoles.Select(ur => ur.Role!.Name)];
+    public decimal? Allowance { get; set; } =
+        user.HasRole(UserRoleConstants.Customer) ? user.Allowance : null;
+    public string? Uid { get; set; } =
+        user.HasUidAccess() ? user.Uid : null;
     public override string ToString()
     {
         return JsonSerializer.Serialize(this, JOptions.DefaultOptions);

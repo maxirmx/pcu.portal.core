@@ -36,6 +36,9 @@ namespace Fuelflux.Core.Data
         public DbSet<User> Users => Set<User>();
         public DbSet<Role> Roles => Set<Role>();
         public DbSet<UserRole> UserRoles => Set<UserRole>();
+        public DbSet<FuelStation> FuelStations => Set<FuelStation>();
+        public DbSet<FuelTank> FuelTanks => Set<FuelTank>();
+        public DbSet<PumpController> PumpControllers => Set<PumpController>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -68,15 +71,33 @@ namespace Fuelflux.Core.Data
                     LastName = "Samsonov",
                     Patronymic = "",
                     Email = "maxirmx@sw.consulting",
-                    Password = "$2b$12$eOXzlwFzyGVERe0sNwFeJO5XnvwsjloUpL4o2AIQ8254RT88MnsDi"
+                    Password = "$2b$12$eOXzlwFzyGVERe0sNwFeJO5XnvwsjloUpL4o2AIQ8254RT88MnsDi",
+                    Allowance = 0m,
+                    Uid = ""
                 }
             );
+
+            modelBuilder.Entity<User>()
+                .HasIndex(u => u.Uid);
 
             modelBuilder.Entity<UserRole>().HasData(
                 new UserRole { UserId = 1, RoleId = 1 }, // Admin
                 new UserRole { UserId = 1, RoleId = 2 }, // Operator
                 new UserRole { UserId = 1, RoleId = 3 }  // Customer
             );
+
+            modelBuilder.Entity<FuelTank>()
+                .HasOne(ft => ft.FuelStation)
+                .WithMany(fs => fs.FuelTanks)
+                .HasForeignKey(ft => ft.FuelStationId);
+
+            modelBuilder.Entity<FuelTank>()
+                .HasIndex(ft => new { ft.FuelStationId, ft.Number })
+                .IsUnique();
+            modelBuilder.Entity<PumpController>()
+                .HasOne(pc => pc.FuelStation)
+                .WithMany(fs => fs.PumpControllers)
+                .HasForeignKey(pc => pc.FuelStationId);
         }
     }
 }

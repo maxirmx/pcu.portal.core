@@ -48,7 +48,13 @@ namespace Fuelflux.Core.Models
         [Column("password")]
         public required string Password { get; set; }
 
-        public ICollection<UserRole> UserRoles { get; set; } = [];
+        [Column("allowance", TypeName = "numeric(5,2)")]
+        public decimal? Allowance { get; set; }
+
+        [Column("uid")]
+        public string? Uid { get; set; }
+
+        public virtual ICollection<UserRole> UserRoles { get; set; } = [];
 
         public bool HasAnyRole() => UserRoles.Count != 0;
 
@@ -59,6 +65,8 @@ namespace Fuelflux.Core.Models
 
         public bool IsAdministrator() => HasRole(UserRoleConstants.Admin);
         public bool IsOperator() => HasRole(UserRoleConstants.Operator);
+        public bool IsCustomer() => HasRole(UserRoleConstants.Customer);
+        public bool HasUidAccess() => IsCustomer() || IsOperator();
 
     }
 }

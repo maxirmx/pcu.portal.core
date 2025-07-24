@@ -47,8 +47,10 @@ builder.WebHost.ConfigureKestrel(options =>
 
 builder.Services
     .Configure<AppSettings>(builder.Configuration.GetSection("AppSettings"))
+    .Configure<DeviceAuthSettings>(builder.Configuration.GetSection("DeviceAuth"))
     .AddScoped<IJwtUtils, JwtUtils>()
     .AddScoped<IUserInformationService, UserInformationService>()
+    .AddSingleton<IDeviceAuthService, DeviceAuthService>()
     .AddHttpContextAccessor()
     .AddControllers();
 

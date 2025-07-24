@@ -1,5 +1,5 @@
 # Copyright (c) 2025 Maxim [maxirmx] Samsonov (https://sw.consulting)
-# This file is a part of logibooks project
+# This file is a part of Fuelflux project
 #
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions
@@ -58,6 +58,14 @@ services:
         condition: service_healthy
     environment:
       ASPNETCORE_ENVIRONMENT: Development
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8082:8080"
+    depends_on:
+      db:
+        condition: service_healthy
 
 volumes:
   pgdata:
