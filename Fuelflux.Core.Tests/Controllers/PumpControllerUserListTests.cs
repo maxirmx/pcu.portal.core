@@ -147,6 +147,30 @@ public class PumpControllerUserListTests
     }
 
     [Test]
+    public async Task GetPumpUsers_ReturnsBadRequest_WhenModelStateInvalid()
+    {
+        _controller.ModelState.AddModelError("First", "required");
+        var req = new PumpUserRequest { First = 0, Number = 1 };
+        var result = await _controller.GetPumpUsers(req);
+
+        Assert.That(result.Result, Is.TypeOf<ObjectResult>());
+        var obj = result.Result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+    }
+
+    [Test]
+    public async Task GetPumpUsers_ReturnsForbidden_WhenUserUidMissing()
+    {
+        _controller.ControllerContext.HttpContext.Items.Remove("UserUid");
+        var req = new PumpUserRequest { First = 0, Number = 1 };
+        var result = await _controller.GetPumpUsers(req);
+
+        Assert.That(result.Result, Is.TypeOf<ObjectResult>());
+        var obj = result.Result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
     public void PumpUserRequest_Validation_RequiresNonNegativeFirst()
     {
         var request = new PumpUserRequest { First = -1, Number = 1 };

@@ -202,6 +202,23 @@ public class PumpControllerTests
     }
 
     [Test]
+    public async Task Authorize_ReturnsForbidden_WhenRoleNotAllowed()
+    {
+        var role = new Role { Id = 3, RoleId = UserRoleConstants.Admin, Name = "admin" };
+        var admin = new User { Id = 3, Email = "adm@c.c", Password = "p", Uid = "admin", RoleId = role.Id, Role = role };
+        _dbContext.Roles.Add(role);
+        _dbContext.Users.Add(admin);
+        _dbContext.SaveChanges();
+
+        var req = new DeviceAuthorizeRequest { PumpControllerUid = _pump.Uid.ToString(), UserUid = admin.Uid! };
+        var result = await _controller.Authorize(req);
+
+        Assert.That(result.Result, Is.TypeOf<ObjectResult>());
+        var obj = result.Result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
     public async Task FuelIntake_AddsVolume_WhenOperator()
     {
         _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
@@ -260,6 +277,22 @@ public class PumpControllerTests
         _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
 
         var result = await _controller.FuelIntake(null!);
+
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+    }
+
+    [Test]
+    public async Task FuelIntake_ReturnsBadRequest_WhenModelStateInvalid()
+    {
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
+        _controller.ModelState.AddModelError("TankNumber", "required");
+
+        var req = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = 10m };
+        var result = await _controller.FuelIntake(req);
 
         Assert.That(result, Is.TypeOf<ObjectResult>());
         var obj = result as ObjectResult;
