@@ -169,6 +169,23 @@ public class PumpControllerRefuelTests
     }
 
     [Test]
+    public async Task Refuel_ReturnsBadRequest_WhenModelStateInvalid()
+    {
+        var (_, customer) = CreateCustomer(9, 50m);
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = customer.Uid;
+        _controller.ModelState.AddModelError("TankNumber", "required");
+
+        var req = new RefuelRequest { TankNumber = 1, RefuelVolume = 10m };
+        var result = await _controller.Refuel(req);
+
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+    }
+
+    [Test]
     public async Task Refuel_ReturnsForbidden_WhenUserUidMissing()
     {
         _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
@@ -283,7 +300,7 @@ public class PumpControllerRefuelTests
 
         Assert.That(isValid, Is.False);
         Assert.That(results.Any(r => r.MemberNames.Contains(nameof(RefuelRequest.TankNumber)) &&
-                                    r.ErrorMessage!.Contains("номер резервуара должен быть положительным числом")), Is.True);
+                                    r.ErrorMessage!.Contains("РЅРѕРјРµСЂ СЂРµР·РµСЂРІСѓР°СЂР° РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РїРѕР»РѕР¶РёС‚РµР»СЊРЅС‹Рј С‡РёСЃР»РѕРј")), Is.True);
     }
 
     [Test]
@@ -310,7 +327,7 @@ public class PumpControllerRefuelTests
 
         Assert.That(isValid, Is.False);
         Assert.That(results.Any(r => r.MemberNames.Contains(nameof(RefuelRequest.RefuelVolume)) &&
-                                    r.ErrorMessage!.Contains("объем заправленного топлива должен быть положительным числом")), Is.True);
+                                    r.ErrorMessage!.Contains("РѕР±СЉРµРј Р·Р°РїСЂР°РІР»РµРЅРЅРѕРіРѕ С‚РѕРїР»РёРІР° РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РїРѕР»РѕР¶РёС‚РµР»СЊРЅС‹Рј С‡РёСЃР»РѕРј")), Is.True);
     }
 
     [Test]
