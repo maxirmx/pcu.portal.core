@@ -27,5 +27,5 @@ namespace Fuelflux.Core;
 
 public static class VersionInfo
 {
-    public const string AppVersion = "0.1.0";
+    public const string AppVersion = "0.1.1";
 }

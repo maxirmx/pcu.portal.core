@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Fuelflux.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250725055619_InitialCreate")]
+    [Migration("20250725100029_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
