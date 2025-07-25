@@ -32,6 +32,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Microsoft.EntityFrameworkCore;
+using System.Linq;
 
 using NUnit.Framework;
 
@@ -67,6 +68,8 @@ public class PumpControllerTests
 
         var fs = new FuelStation { Id = 1, Name = "fs" };
         _pump = new PumpCntrl { Id = 1, Uid = Guid.NewGuid().ToString(), FuelStationId = fs.Id, FuelStation = fs };
+        var tank1 = new FuelTank { Id = 1, Number = 1, Allowance = 500m, FuelStationId = fs.Id, FuelStation = fs };
+        var tank2 = new FuelTank { Id = 2, Number = 2, Allowance = 1000m, FuelStationId = fs.Id, FuelStation = fs };
         var role = new Role { Id = 1, RoleId = UserRoleConstants.Operator, Name = "op" };
         _user = new User
         {
@@ -82,6 +85,7 @@ public class PumpControllerTests
         };
         _dbContext.FuelStations.Add(fs);
         _dbContext.PumpControllers.Add(_pump);
+        _dbContext.FuelTanks.AddRange(tank1, tank2);
         _dbContext.Roles.Add(role);
         _dbContext.Users.Add(_user);
         _dbContext.SaveChanges();
@@ -105,11 +109,15 @@ public class PumpControllerTests
         var req = new DeviceAuthorizeRequest { PumpControllerUid = _pump.Uid.ToString(), UserUid = _user.Uid! };
         var result = await _controller.Authorize(req);
         Assert.That(result.Result, Is.TypeOf<OkObjectResult>());
-        var token = ((result.Result as OkObjectResult)!.Value as TokenResponse)!.Token;
+        var response = (result.Result as OkObjectResult)!.Value as DeviceAuthorizeResponse;
+        Assert.That(response, Is.Not.Null);
+        var token = response!.Token;
         var validationResult = _service.Validate(token);
         Assert.That(validationResult, Is.Not.Null);
         Assert.That(validationResult!.PumpControllerUid, Is.EqualTo(_pump.Uid));
         Assert.That(validationResult.UserUid, Is.EqualTo(_user.Uid));
+        Assert.That(response.RoleId, Is.EqualTo((int)_user.Role!.RoleId));
+        Assert.That(response.FuelTanks.Count(), Is.EqualTo(2));
     }
 
     [Test]
@@ -159,5 +167,34 @@ public class PumpControllerTests
         Assert.That(result.Result, Is.TypeOf<ObjectResult>());
         var obj = result.Result as ObjectResult;
         Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status401Unauthorized));
+    }
+
+    [Test]
+    public async Task Authorize_ReturnsAllowance_ForCustomer()
+    {
+        var role = new Role { Id = 2, RoleId = UserRoleConstants.Customer, Name = "cust" };
+        var customer = new User
+        {
+            Id = 2,
+            Email = "c@c.c",
+            Password = "p",
+            FirstName = "",
+            LastName = "",
+            Patronymic = "",
+            Uid = "custuid",
+            RoleId = role.Id,
+            Role = role,
+            Allowance = 42m
+        };
+        _dbContext.Roles.Add(role);
+        _dbContext.Users.Add(customer);
+        _dbContext.SaveChanges();
+
+        var req = new DeviceAuthorizeRequest { PumpControllerUid = _pump.Uid.ToString(), UserUid = customer.Uid! };
+        var result = await _controller.Authorize(req);
+        Assert.That(result.Result, Is.TypeOf<OkObjectResult>());
+        var response = (result.Result as OkObjectResult)!.Value as DeviceAuthorizeResponse;
+        Assert.That(response, Is.Not.Null);
+        Assert.That(response!.Allowance, Is.EqualTo(customer.Allowance));
     }
 }
