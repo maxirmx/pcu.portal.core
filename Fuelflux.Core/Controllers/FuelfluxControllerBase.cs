@@ -49,6 +49,12 @@ public class FuelfluxControllerPreBase(AppDbContext db, ILogger logger) : Contro
                           new ErrMessage() { Msg = $"Некорректный запрос \"заправка\": {msg}" });
     }
 
+    protected ObjectResult _400PumpUsers(string msg)
+    {
+        return StatusCode(StatusCodes.Status400BadRequest,
+                          new ErrMessage() { Msg = $"Некорректный запрос \"пользователи\": {msg}" });
+    }
+
     protected ObjectResult _401()
     {
         return StatusCode(StatusCodes.Status401Unauthorized,

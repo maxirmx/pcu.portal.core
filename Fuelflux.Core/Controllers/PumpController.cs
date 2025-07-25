@@ -234,6 +234,16 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
             return _403();
         }
 
+        if (!ModelState.IsValid)
+        {
+            var firstError = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .FirstOrDefault()?.ErrorMessage ?? "неизвестная проблема.";
+
+            _logger.LogWarning("Model validation failed: {Error}", firstError);
+            return _400PumpUsers(firstError);
+        }
+
         var user = await _db.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Uid == userUid);
         if (user == null || !user.IsController())
         {
@@ -249,7 +259,7 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
             .Take(number)
             .Select(u => new PumpUserItem
             {
-                Uid = u.Uid,
+                Uid = u.Uid!,
                 Allowance = u.IsCustomer() ? u.Allowance : null
             })
             .ToListAsync();
