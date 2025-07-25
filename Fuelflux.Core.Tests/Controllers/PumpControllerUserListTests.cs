@@ -50,6 +50,12 @@ public class PumpControllerUserListTests
     private DeviceAuthService _service = null!;
     private AppDbContext _dbContext = null!;
     private User _controllerUser = null!;
+    
+    // Common roles for reuse across tests
+    private Role _controllerRole = null!;
+    private Role _adminRole = null!;
+    private Role _operatorRole = null!;
+    private Role _customerRole = null!;
 
     [SetUp]
     public void Setup()
@@ -63,17 +69,23 @@ public class PumpControllerUserListTests
         var appOpts = Options.Create(new AppSettings { Secret = "secret" });
         _service = new DeviceAuthService(opts, appOpts, new LoggerFactory().CreateLogger<DeviceAuthService>());
 
-        var ctrlRole = new Role { Id = 1, RoleId = UserRoleConstants.Controller, Name = "ctrl" };
+        // Create all common roles
+        _controllerRole = new Role { Id = 1, RoleId = UserRoleConstants.Controller, Name = "ctrl" };
+        _adminRole = new Role { Id = 2, RoleId = UserRoleConstants.Admin, Name = "admin" };
+        _operatorRole = new Role { Id = 3, RoleId = UserRoleConstants.Operator, Name = "op" };
+        _customerRole = new Role { Id = 4, RoleId = UserRoleConstants.Customer, Name = "cust" };
+        
         _controllerUser = new User
         {
             Id = 1,
             Email = "c@c.c",
             Password = "p",
             Uid = "ctrluid",
-            RoleId = ctrlRole.Id,
-            Role = ctrlRole
+            RoleId = _controllerRole.Id,
+            Role = _controllerRole
         };
-        _dbContext.Roles.Add(ctrlRole);
+        
+        _dbContext.Roles.AddRange(_controllerRole, _adminRole, _operatorRole, _customerRole);
         _dbContext.Users.Add(_controllerUser);
         _dbContext.SaveChanges();
 
@@ -92,12 +104,9 @@ public class PumpControllerUserListTests
     [Test]
     public async Task GetPumpUsers_ReturnsUsers_WhenController()
     {
-        var opRole = new Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "op" };
-        var custRole = new Role { Id = 3, RoleId = UserRoleConstants.Customer, Name = "cust" };
-        var op1 = new User { Id = 2, Email = "o1@a", Password = "p", Uid = "op1", RoleId = opRole.Id, Role = opRole };
-        var cust = new User { Id = 3, Email = "c@a", Password = "p", Uid = "cust1", Allowance = 10m, RoleId = custRole.Id, Role = custRole };
-        var op2 = new User { Id = 4, Email = "o2@a", Password = "p", Uid = "op2", RoleId = opRole.Id, Role = opRole };
-        _dbContext.Roles.AddRange(opRole, custRole);
+        var op1 = new User { Id = 2, Email = "o1@a", Password = "p", Uid = "op1", RoleId = _operatorRole.Id, Role = _operatorRole };
+        var cust = new User { Id = 3, Email = "c@a", Password = "p", Uid = "cust1", Allowance = 10m, RoleId = _customerRole.Id, Role = _customerRole };
+        var op2 = new User { Id = 4, Email = "o2@a", Password = "p", Uid = "op2", RoleId = _operatorRole.Id, Role = _operatorRole };
         _dbContext.Users.AddRange(op1, cust, op2);
         _dbContext.SaveChanges();
 
@@ -107,18 +116,22 @@ public class PumpControllerUserListTests
         Assert.That(result.Value, Is.Not.Null);
         var items = result.Value!.ToList();
         Assert.That(items.Count, Is.EqualTo(2));
+        
+        // First user should be customer (has allowance)
         Assert.That(items[0].Uid, Is.EqualTo(cust.Uid));
         Assert.That(items[0].Allowance, Is.EqualTo(10m));
+        Assert.That(items[0].RoleId, Is.EqualTo((int)UserRoleConstants.Customer));
+        
+        // Second user should be operator (no allowance)
         Assert.That(items[1].Uid, Is.EqualTo(op2.Uid));
         Assert.That(items[1].Allowance, Is.Null);
+        Assert.That(items[1].RoleId, Is.EqualTo((int)UserRoleConstants.Operator));
     }
 
     [Test]
     public async Task GetPumpUsers_ReturnsForbidden_WhenNotController()
     {
-        var opRole = new Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "op" };
-        var opUser = new User { Id = 2, Email = "o1@a", Password = "p", Uid = "op1", RoleId = opRole.Id, Role = opRole };
-        _dbContext.Roles.Add(opRole);
+        var opUser = new User { Id = 2, Email = "o1@a", Password = "p", Uid = "op1", RoleId = _operatorRole.Id, Role = _operatorRole };
         _dbContext.Users.Add(opUser);
         _dbContext.SaveChanges();
 
@@ -134,10 +147,7 @@ public class PumpControllerUserListTests
     [Test]
     public async Task GetPumpUsers_ReturnsNoContent_WhenRangeEmpty()
     {
-        var opRole = new Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "op" };
-        var custRole = new Role { Id = 3, RoleId = UserRoleConstants.Customer, Name = "cust" };
-        _dbContext.Roles.AddRange(opRole, custRole);
-        _dbContext.Users.Add(new User { Id = 2, Email = "o1@a", Password = "p", Uid = "op1", RoleId = opRole.Id, Role = opRole });
+        _dbContext.Users.Add(new User { Id = 2, Email = "o1@a", Password = "p", Uid = "op1", RoleId = _operatorRole.Id, Role = _operatorRole });
         _dbContext.SaveChanges();
 
         var req = new PumpUserRequest { First = 10, Number = 5 };
@@ -207,5 +217,98 @@ public class PumpControllerUserListTests
 
         Assert.That(isValid, Is.True);
         Assert.That(results, Is.Empty);
+    }
+
+    [Test]
+    public async Task GetPumpUsers_ReturnsCorrectRoleIds_ForDifferentUserTypes()
+    {
+        // Arrange
+        var operator1 = new User { Id = 2, Email = "op1@test.com", Password = "p", Uid = "operator1", RoleId = _operatorRole.Id, Role = _operatorRole };
+        var customer1 = new User { Id = 3, Email = "cust1@test.com", Password = "p", Uid = "customer1", Allowance = 50.0m, RoleId = _customerRole.Id, Role = _customerRole };
+        
+        _dbContext.Users.AddRange(operator1, customer1);
+        _dbContext.SaveChanges();
+
+        var req = new PumpUserRequest { First = 0, Number = 10 };
+        
+        // Act
+        var result = await _controller.GetPumpUsers(req);
+
+        // Assert
+        Assert.That(result.Value, Is.Not.Null);
+        var items = result.Value!.ToList();
+        Assert.That(items.Count, Is.EqualTo(2));
+
+        // Verify operator user
+        var operatorItem = items.First(i => i.Uid == "operator1");
+        Assert.That(operatorItem.RoleId, Is.EqualTo((int)UserRoleConstants.Operator));
+        Assert.That(operatorItem.Allowance, Is.Null);
+        
+        // Verify customer user
+        var customerItem = items.First(i => i.Uid == "customer1");
+        Assert.That(customerItem.RoleId, Is.EqualTo((int)UserRoleConstants.Customer));
+        Assert.That(customerItem.Allowance, Is.EqualTo(50.0m));
+    }
+
+    [Test]
+    public async Task GetPumpUsers_ExcludesAdminUsers_FromResults()
+    {
+        // Arrange
+        var admin = new User { Id = 2, Email = "admin@test.com", Password = "p", Uid = "admin1", RoleId = _adminRole.Id, Role = _adminRole };
+        var operator1 = new User { Id = 3, Email = "op1@test.com", Password = "p", Uid = "operator1", RoleId = _operatorRole.Id, Role = _operatorRole };
+        
+        _dbContext.Users.AddRange(admin, operator1);
+        _dbContext.SaveChanges();
+
+        var req = new PumpUserRequest { First = 0, Number = 10 };
+        
+        // Act
+        var result = await _controller.GetPumpUsers(req);
+
+        // Assert
+        Assert.That(result.Value, Is.Not.Null);
+        var items = result.Value!.ToList();
+        
+        // Only operator should be returned, admin should be excluded
+        Assert.That(items.Count, Is.EqualTo(1));
+        Assert.That(items[0].Uid, Is.EqualTo("operator1"));
+        Assert.That(items[0].RoleId, Is.EqualTo((int)UserRoleConstants.Operator));
+        
+        // Verify no admin users in results
+        Assert.That(items.Any(i => i.RoleId == (int)UserRoleConstants.Admin), Is.False);
+    }
+
+    [Test]
+    public void PumpUserItem_CanBeInstantiated_WithAllProperties()
+    {
+        // Arrange & Act
+        var pumpUserItem = new PumpUserItem
+        {
+            Uid = "test-uid-123",
+            Allowance = 100.50m,
+            RoleId = (int)UserRoleConstants.Customer
+        };
+
+        // Assert
+        Assert.That(pumpUserItem.Uid, Is.EqualTo("test-uid-123"));
+        Assert.That(pumpUserItem.Allowance, Is.EqualTo(100.50m));
+        Assert.That(pumpUserItem.RoleId, Is.EqualTo((int)UserRoleConstants.Customer));
+    }
+
+    [Test]
+    public void PumpUserItem_AllowsNullAllowance_WithRoleId()
+    {
+        // Arrange & Act
+        var pumpUserItem = new PumpUserItem
+        {
+            Uid = "operator-uid",
+            Allowance = null,
+            RoleId = (int)UserRoleConstants.Operator
+        };
+
+        // Assert
+        Assert.That(pumpUserItem.Uid, Is.EqualTo("operator-uid"));
+        Assert.That(pumpUserItem.Allowance, Is.Null);
+        Assert.That(pumpUserItem.RoleId, Is.EqualTo((int)UserRoleConstants.Operator));
     }
 }

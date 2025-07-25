@@ -269,7 +269,8 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
             .Select(u => new PumpUserItem
             {
                 Uid = u.Uid!,
-                Allowance = u.IsCustomer() ? u.Allowance : null
+                Allowance = u.IsCustomer() ? u.Allowance : null,
+                RoleId = (int)u.Role!.RoleId
             })
             .ToListAsync();
 

@@ -31,7 +31,7 @@ public class RefuelRequest
 {
     [Required(ErrorMessage = "номер резервуара обязателен.")]
     [Range(1, int.MaxValue, ErrorMessage = "номер резервуара должен быть положительным числом.")]
-    public int TankNumber { get; set; }
+    public decimal TankNumber { get; set; }
 
     [Required(ErrorMessage = "oбъем заправленного топлива обязателен.")]
     [Range(0.01, double.MaxValue, ErrorMessage = "объем заправленного топлива должен быть положительным числом.")]
