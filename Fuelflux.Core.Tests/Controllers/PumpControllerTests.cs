@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
+п»ї// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
 // All rights reserved.
 // This file is a part of Fuelflux Core application
 //
@@ -384,7 +384,7 @@ public class PumpControllerTests
 
         Assert.That(isValid, Is.False);
         Assert.That(results.Any(r => r.MemberNames.Contains(nameof(FuelIntakeRequest.TankNumber)) && 
-                                    r.ErrorMessage!.Contains("положительным числом")), Is.True);
+                                    r.ErrorMessage!.Contains("РїРѕР»РѕР¶РёС‚РµР»СЊРЅС‹Рј С‡РёСЃР»РѕРј")), Is.True);
     }
 
     [Test]
@@ -411,7 +411,7 @@ public class PumpControllerTests
 
         Assert.That(isValid, Is.False);
         Assert.That(results.Any(r => r.MemberNames.Contains(nameof(FuelIntakeRequest.IntakeVolume)) && 
-                                    r.ErrorMessage!.Contains("объем принятого топлива должен быть положительным числом")), Is.True);
+                                    r.ErrorMessage!.Contains("РѕР±СЉРµРј РїСЂРёРЅСЏС‚РѕРіРѕ С‚РѕРїР»РёРІР° РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РїРѕР»РѕР¶РёС‚РµР»СЊРЅС‹Рј С‡РёСЃР»РѕРј")), Is.True);
     }
 
     [Test]
