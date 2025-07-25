@@ -81,7 +81,7 @@ public class FuelStationControllerTests
     {
         SetCurrentUser(1);
         _uis.Setup(u => u.CheckAdmin(1)).ReturnsAsync(true);
-        var update = new FuelTankViewItem { Number = 1 };
+        var update = new FuelTankItem { Number = 1 };
         var result = await _controller.PutTank(1, update);
         Assert.That(result, Is.TypeOf<ObjectResult>());
         var obj = result as ObjectResult;

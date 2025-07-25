@@ -90,32 +90,32 @@ public class FuelStationController(
 
     #region FuelTank
     [HttpGet("tanks")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<FuelTankViewItem>))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<FuelTankItem>))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
-    public async Task<ActionResult<IEnumerable<FuelTankViewItem>>> GetTanks()
+    public async Task<ActionResult<IEnumerable<FuelTankItem>>> GetTanks()
     {
         if (!await _uis.CheckAdmin(_curUserId)) return _403();
         var items = await _db.FuelTanks.AsNoTracking()
-            .Select(t => new FuelTankViewItem(t)).ToListAsync();
+            .Select(t => new FuelTankItem(t)).ToListAsync();
         return items;
     }
 
     [HttpGet("tanks/{id}")]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(FuelTankViewItem))]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(FuelTankItem))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
     [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ErrMessage))]
-    public async Task<ActionResult<FuelTankViewItem>> GetTank(int id)
+    public async Task<ActionResult<FuelTankItem>> GetTank(int id)
     {
         if (!await _uis.CheckAdmin(_curUserId)) return _403();
         var tank = await _db.FuelTanks.AsNoTracking().FirstOrDefaultAsync(t => t.Id == id);
         if (tank == null) return _404FuelTank(id);
-        return new FuelTankViewItem(tank);
+        return new FuelTankItem(tank);
     }
 
     [HttpPost("tanks")]
     [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(Reference))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
-    public async Task<ActionResult<Reference>> PostTank(FuelTankViewItem item)
+    public async Task<ActionResult<Reference>> PostTank(FuelTankItem item)
     {
         if (!await _uis.CheckAdmin(_curUserId)) return _403();
         var tank = new FuelTank
@@ -134,7 +134,7 @@ public class FuelStationController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
     [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ErrMessage))]
-    public async Task<IActionResult> PutTank(int id, FuelTankViewItem item)
+    public async Task<IActionResult> PutTank(int id, FuelTankItem item)
     {
         if (!await _uis.CheckAdmin(_curUserId)) return _403();
         var tank = await _db.FuelTanks.FindAsync(id);

@@ -64,7 +64,7 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
         var token = _authService.Authorize(pump, user);
 
         var fuelTanks = pump.FuelStation.FuelTanks
-            .Select(ft => new FuelTankItem { Number = ft.Number, Volume = ft.Volume })
+            .Select(ft => new FuelTankInfoItem { Number = ft.Number, Volume = ft.Volume })
             .ToList();
 
         var response = new DeviceAuthorizeResponse
