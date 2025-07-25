@@ -89,10 +89,27 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
 
     [HttpPost("fuelintake")]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrMessage))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
     [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ErrMessage))]
     public async Task<IActionResult> FuelIntake(FuelIntakeRequest request)
     {
+        // Validate request parameter
+        if (request == null)
+        {
+            return _400();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var firstError = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .FirstOrDefault()?.ErrorMessage ?? "неизвестная проблема.";
+            
+            _logger.LogWarning("Model validation failed: {Error}", firstError);
+            return _400Intake(firstError);
+        }
+
         var userUid = HttpContext.Items["UserUid"] as string;
         if (userUid == null)
         {
@@ -129,6 +146,9 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
 
         tank.Allowance += request.IntakeVolume;
         await _db.SaveChangesAsync();
+
+        _logger.LogInformation("Fuel intake successful: Tank {TankNumber}, Volume {IntakeVolume}, New Total {NewTotal}", 
+            request.TankNumber, request.IntakeVolume, tank.Allowance);
 
         return NoContent();
     }

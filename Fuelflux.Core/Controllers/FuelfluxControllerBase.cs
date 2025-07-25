@@ -38,20 +38,10 @@ public class FuelfluxControllerPreBase(AppDbContext db, ILogger logger) : Contro
         return StatusCode(StatusCodes.Status400BadRequest,
                           new ErrMessage() { Msg = "Нарушена целостность запроса" });
     }
-    protected ObjectResult _400EmptyRegister()
+    protected ObjectResult _400Intake(string msg)
     {
         return StatusCode(StatusCodes.Status400BadRequest,
-                          new ErrMessage() { Msg = "Пустой файл реестра" });
-    }
-    protected ObjectResult _400NoRegister()
-    {
-        return StatusCode(StatusCodes.Status400BadRequest,
-                          new ErrMessage() { Msg = "Файл реестра не найден в архиве" });
-    }
-    protected ObjectResult _400UnsupportedFileType(string ext)
-    {
-        return StatusCode(StatusCodes.Status400BadRequest,
-                          new ErrMessage() { Msg = $"Файлы формата {ext} не поддерживаются. Можно загрузить .xlsx, .xls, .zip, .rar" });
+                          new ErrMessage() { Msg = $"Некорректный запрос \"приём топлива\": {msg}" });
     }
 
     protected ObjectResult _401()
