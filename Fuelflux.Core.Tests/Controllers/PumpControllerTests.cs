@@ -198,4 +198,55 @@ public class PumpControllerTests
         Assert.That(response!.Allowance, Is.EqualTo(customer.Allowance));
         Assert.That(response!.Price, Is.Not.Null);
     }
+
+    [Test]
+    public async Task FuelIntake_AddsVolume_WhenOperator()
+    {
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
+
+        var req = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = 100m };
+        var result = await _controller.FuelIntake(req);
+
+        Assert.That(result, Is.TypeOf<NoContentResult>());
+        var tank = _dbContext.FuelTanks.First(t => t.Id == 1);
+        Assert.That(tank.Allowance, Is.EqualTo(600m));
+    }
+
+    [Test]
+    public async Task FuelIntake_ReturnsNotFound_WhenTankMissing()
+    {
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
+
+        var req = new FuelIntakeRequest { TankNumber = 99, IntakeVolume = 50m };
+        var result = await _controller.FuelIntake(req);
+
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status404NotFound));
+    }
+
+    [Test]
+    public async Task FuelIntake_ReturnsForbidden_WhenUserNotOperator()
+    {
+        var role = new Role { Id = 2, RoleId = UserRoleConstants.Customer, Name = "cust" };
+        var customer = new User { Id = 2, Email = "c@c.c", Password = "p", Uid = "cust", RoleId = role.Id, Role = role };
+        _dbContext.Roles.Add(role);
+        _dbContext.Users.Add(customer);
+        _dbContext.SaveChanges();
+
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = customer.Uid;
+
+        var req = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = 10m };
+        var result = await _controller.FuelIntake(req);
+
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
 }

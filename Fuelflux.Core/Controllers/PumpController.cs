@@ -86,4 +86,50 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
         if (token is not null) _authService.Deauthorize(token);
         return NoContent();
     }
+
+    [HttpPost("fuelintake")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
+    [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ErrMessage))]
+    public async Task<IActionResult> FuelIntake(FuelIntakeRequest request)
+    {
+        var userUid = HttpContext.Items["UserUid"] as string;
+        if (userUid == null)
+        {
+            return _403();
+        }
+
+        var user = await _db.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Uid == userUid);
+        if (user == null || !user.IsOperator())
+        {
+            return _403();
+        }
+
+        var pumpUid = HttpContext.Items["PumpControllerUid"] as string;
+        if (pumpUid == null)
+        {
+            return _403();
+        }
+
+        var pump = await _db.PumpControllers
+            .Include(p => p.FuelStation)
+                .ThenInclude(fs => fs.FuelTanks)
+            .FirstOrDefaultAsync(p => p.Uid == pumpUid);
+
+        if (pump == null)
+        {
+            return _403();
+        }
+
+        var tank = pump.FuelStation.FuelTanks.FirstOrDefault(t => t.Number == request.TankNumber);
+        if (tank == null)
+        {
+            return _404FuelTank(request.TankNumber);
+        }
+
+        tank.Allowance += request.IntakeVolume;
+        await _db.SaveChangesAsync();
+
+        return NoContent();
+    }
 }
