@@ -221,4 +221,40 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
 
         return NoContent();
     }
+
+    [HttpGet("users/{first:int}/{number:int}")]
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<UserViewItem>))]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
+    public async Task<ActionResult<IEnumerable<UserViewItem>>> GetUsers(int first, int number)
+    {
+        var userUid = HttpContext.Items["UserUid"] as string;
+        if (userUid == null)
+        {
+            return _403();
+        }
+
+        var user = await _db.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Uid == userUid);
+        if (user == null || !user.IsController())
+        {
+            return _403();
+        }
+
+        var users = await _db.Users
+            .AsNoTracking()
+            .Include(u => u.Role)
+            .Where(u => u.IsCustomer() || u.IsOperator())
+            .OrderBy(u => u.Id)
+            .Skip(first)
+            .Take(number)
+            .Select(u => new UserViewItem(u))
+            .ToListAsync();
+
+        if (!users.Any())
+        {
+            return NoContent();
+        }
+
+        return users;
+    }
 }
