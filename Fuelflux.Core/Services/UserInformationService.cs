@@ -44,8 +44,7 @@ namespace Fuelflux.Core.Services
         {
             var user = await _context.Users
                 .AsNoTracking()
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
+                .Include(u => u.Role)
                 .Where(x => x.Id == cuid)
                 .FirstOrDefaultAsync();
             return user != null && user.IsAdministrator();
@@ -55,14 +54,13 @@ namespace Fuelflux.Core.Services
         {
             var user = await _context.Users
                 .AsNoTracking()
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
+                .Include(u => u.Role)
                 .Where(x => x.Id == cuid)
                 .FirstOrDefaultAsync();
             return user != null && user.IsOperator();
         }
 
-        public async Task<ActionResult<bool>> CheckAdminOrSameUser(int id, int cuid)
+        public async Task<bool> CheckAdminOrSameUser(int id, int cuid)
         {
             if (cuid == 0) return false;
             if (cuid == id) return true;
@@ -74,6 +72,12 @@ namespace Fuelflux.Core.Services
             if (cuid == 0) return false;
             if (cuid == id) return true;
             return false;
+        }
+
+        public async Task<(bool, bool)> CheckAdminAndSameUser(int id, int cuid)
+        {
+            bool isAdmin = await CheckAdmin(cuid);
+            return (isAdmin, cuid == id || isAdmin);
         }
 
         public bool Exists(int id)
@@ -90,8 +94,7 @@ namespace Fuelflux.Core.Services
         {
             var user = await _context.Users
                 .AsNoTracking()
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
+                .Include(u => u.Role)
                 .Where(x => x.Id == id)
                 .Select(x => new UserViewItem(x))
                 .FirstOrDefaultAsync();
@@ -102,10 +105,10 @@ namespace Fuelflux.Core.Services
         {
             return await _context.Users
                 .AsNoTracking()
-                .Include(u => u.UserRoles)
-                    .ThenInclude(ur => ur.Role)
+                .Include(u => u.Role)
                 .Select(x => new UserViewItem(x))
                 .ToListAsync();
         }
+
     }
 }

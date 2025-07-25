@@ -28,4 +28,5 @@ namespace Fuelflux.Core.Settings;
 public class DeviceAuthSettings
 {
     public int SessionMinutes { get; set; } = 30;
+    public string CleanupCron { get; set; } = "0 0 0 * * ?";
 }

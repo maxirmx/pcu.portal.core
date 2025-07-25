@@ -26,13 +26,20 @@
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 
-namespace Fuelflux.Core.Authorization;
 using Fuelflux.Core.RestModels;
 
+namespace Fuelflux.Core.Authorization;
 
 [AttributeUsage(AttributeTargets.Class | AttributeTargets.Method)]
 public class AuthorizeAttribute : Attribute, IAuthorizationFilter
 {
+    public AuthorizationType AuthorizationType { get; set; }
+
+    public AuthorizeAttribute(AuthorizationType authorizationType)
+    {
+        AuthorizationType = authorizationType;
+    }
+
     public void OnAuthorization(AuthorizationFilterContext context)
     {
         // skip authorization if action is decorated with [AllowAnonymous] attribute
@@ -40,16 +47,31 @@ public class AuthorizeAttribute : Attribute, IAuthorizationFilter
         if (allowAnonymous)
             return;
 
-        // authorization
-        context.HttpContext.Items.TryGetValue("UserId", out var userIdObj);
-        int? userId = userIdObj is int id ? id : null;
-        if (userId == null)
+        bool isAuthorized = AuthorizationType switch
+        {
+            AuthorizationType.User => CheckUserAuthentication(context),
+            AuthorizationType.Device => CheckDeviceAuthentication(context),
+            _ => false
+        };
+
+        if (!isAuthorized)
         {
             const string errorMessage = "Необходимо войти в систему.";
             var logger = context.HttpContext.RequestServices.GetService(typeof(ILogger<AuthorizeAttribute>)) as ILogger<AuthorizeAttribute>;
             logger?.LogWarning(errorMessage);
             context.Result = new JsonResult(new ErrMessage { Msg = errorMessage }) { StatusCode = StatusCodes.Status401Unauthorized };
-            return;
         }
+    }
+
+    private static bool CheckUserAuthentication(AuthorizationFilterContext context)
+    {
+        context.HttpContext.Items.TryGetValue("UserId", out var userIdObj);
+        return userIdObj is int;
+    }
+
+    private static bool CheckDeviceAuthentication(AuthorizationFilterContext context)
+    {
+        context.HttpContext.Items.TryGetValue("UserUid", out var userUidObj);
+        return userUidObj is string userUid && !string.IsNullOrEmpty(userUid);
     }
 }

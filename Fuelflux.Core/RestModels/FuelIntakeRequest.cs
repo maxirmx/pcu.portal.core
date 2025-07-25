@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
+﻿// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
 // All rights reserved.
 // This file is a part of Fuelflux Core application
 //
@@ -23,14 +23,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-namespace Fuelflux.Core.Models
-{
-    public enum UserRoleConstants
-    {
-        Admin = 1000,
-        Operator = 1,
-        Customer = 2,
-        Controller = 3
-    }
-}
+using System.ComponentModel.DataAnnotations;
 
+namespace Fuelflux.Core.RestModels;
+
+public class FuelIntakeRequest
+{
+    [Required(ErrorMessage = "номер резервуара обязателен.")]
+    [Range(1, int.MaxValue, ErrorMessage = "номер резервуара должен быть положительным числом.")]
+    public int TankNumber { get; set; }
+
+    [Required(ErrorMessage = "oбъем принятого топлива обязателен.")]
+    [Range(0.01, double.MaxValue, ErrorMessage = "объем принятого топлива должен быть положительным числом.")]
+    public decimal IntakeVolume { get; set; }
+}

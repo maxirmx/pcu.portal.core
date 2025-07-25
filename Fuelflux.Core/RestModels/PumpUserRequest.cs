@@ -1,3 +1,7 @@
+﻿// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
+// All rights reserved.
+// This file is a part of Fuelflux Core application
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -19,20 +23,15 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-using System.ComponentModel.DataAnnotations.Schema;
+using System.ComponentModel.DataAnnotations;
 
-namespace Fuelflux.Core.Models;
+namespace Fuelflux.Core.RestModels;
 
-[Table("pump_controllers")]
-public class PumpController
+public class PumpUserRequest
 {
-    [Column("id")]
-    public int Id { get; set; }
+    [Range(0, int.MaxValue, ErrorMessage = "начальное значение не может быть отрицательным.")]
+    public int First { get; set; }
 
-    [Column("guid")]
-    public required Guid Guid { get; set; }
-
-    [Column("fuel_station_id")]
-    public int FuelStationId { get; set; }
-    public virtual FuelStation FuelStation { get; set; } = null!;
+    [Range(1, int.MaxValue, ErrorMessage = "количество должно быть положительным.")]
+    public int Number { get; set; }
 }
