@@ -24,7 +24,7 @@ using System.ComponentModel.DataAnnotations.Schema;
 namespace Fuelflux.Core.Models;
 
 [Table("pump_controllers")]
-public class PumpController
+public class PumpCntrl
 {
     [Column("id")]
     public int Id { get; set; }

@@ -37,7 +37,7 @@ namespace Fuelflux.Core.Data
         public DbSet<Role> Roles => Set<Role>();
         public DbSet<FuelStation> FuelStations => Set<FuelStation>();
         public DbSet<FuelTank> FuelTanks => Set<FuelTank>();
-        public DbSet<PumpController> PumpControllers => Set<PumpController>();
+        public DbSet<PumpCntrl> PumpControllers => Set<PumpCntrl>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -53,7 +53,7 @@ namespace Fuelflux.Core.Data
                 new Role { Id = 1, RoleId = UserRoleConstants.Admin, Name = "Администратор системы" },
                 new Role { Id = 2, RoleId = UserRoleConstants.Operator, Name = "Оператор АЗС" },
                 new Role { Id = 3, RoleId = UserRoleConstants.Customer, Name = "Клиент" },
-                new Role { Id = 4, RoleId = UserRoleConstants.Controller, Name = "Котроллер ТРК" }
+                new Role { Id = 4, RoleId = UserRoleConstants.Controller, Name = "Контроллер ТРК" }
             );
 
             modelBuilder.Entity<User>().HasData(
@@ -83,7 +83,7 @@ namespace Fuelflux.Core.Data
             modelBuilder.Entity<FuelTank>()
                 .HasIndex(ft => new { ft.FuelStationId, ft.Number })
                 .IsUnique();
-            modelBuilder.Entity<PumpController>()
+            modelBuilder.Entity<PumpCntrl>()
                 .HasOne(pc => pc.FuelStation)
                 .WithMany(fs => fs.PumpControllers)
                 .HasForeignKey(pc => pc.FuelStationId);

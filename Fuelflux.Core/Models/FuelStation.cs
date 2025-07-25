@@ -33,5 +33,5 @@ public class FuelStation
     public required string Name { get; set; }
 
     public ICollection<FuelTank> FuelTanks { get; set; } = [];
-    public ICollection<PumpController> PumpControllers { get; set; } = [];
+    public ICollection<PumpCntrl> PumpControllers { get; set; } = [];
 }

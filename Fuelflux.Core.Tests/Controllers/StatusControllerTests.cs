@@ -25,13 +25,14 @@
 
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Logging;
+
+using System.Threading.Tasks;
+
 using NUnit.Framework;
 
 using Fuelflux.Core.Controllers;
 using Fuelflux.Core.Data;
 using Fuelflux.Core.RestModels;
-using Fuelflux.Core;
-using System.Threading.Tasks;
 
 namespace Fuelflux.Core.Tests.Controllers;
 

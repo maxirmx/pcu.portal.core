@@ -114,7 +114,7 @@ namespace Fuelflux.Core.Migrations
                     { 1, "Администратор системы", 1 },
                     { 2, "Оператор АЗС", 2 },
                     { 3, "Клиент", 3 },
-                    { 4, "Котроллер ТРК", 4 }
+                    { 4, "Контроллер ТРК", 4 }
                 });
 
             migrationBuilder.InsertData(

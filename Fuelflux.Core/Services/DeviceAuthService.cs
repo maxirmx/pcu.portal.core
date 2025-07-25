@@ -37,7 +37,7 @@ namespace Fuelflux.Core.Services;
 
 public class DeviceAuthService : IDeviceAuthService
 {
-    private record DeviceSession(DateTime Expires, PumpController PumpController, User User);
+    private record DeviceSession(DateTime Expires, PumpCntrl PumpController, User User);
     private readonly ConcurrentDictionary<string, DeviceSession> _sessions = new();
     private readonly DeviceAuthSettings _settings;
     private readonly AppSettings _appSettings;
@@ -59,7 +59,7 @@ public class DeviceAuthService : IDeviceAuthService
         }
     }
 
-    public string Authorize(PumpController pump, User user)
+    public string Authorize(PumpCntrl pump, User user)
     {
         var tokenHandler = new JwtSecurityTokenHandler();
         var key = SHA256.HashData(Encoding.UTF8.GetBytes(_appSettings.Secret!));

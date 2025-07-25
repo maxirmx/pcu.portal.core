@@ -138,7 +138,7 @@ namespace Fuelflux.Core.Migrations
                         new
                         {
                             Id = 4,
-                            Name = "Котроллер ТРК",
+                            Name = "Контроллер ТРК",
                             RoleId = 4
                         });
                 });

@@ -24,12 +24,15 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 using System;
-using Fuelflux.Core.Services;
-using Fuelflux.Core.Settings;
+
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
-using Fuelflux.Core.Models;
+
 using NUnit.Framework;
+
+using Fuelflux.Core.Models;
+using Fuelflux.Core.Services;
+using Fuelflux.Core.Settings;
 
 namespace Fuelflux.Core.Tests.Services;
 
@@ -38,7 +41,7 @@ public class DeviceAuthServiceTests
 {
     private DeviceAuthService _service = null!;
 
-    private PumpController _pump = null!;
+    private PumpCntrl _pump = null!;
     private User _user = null!;
 
     [SetUp]
@@ -49,7 +52,7 @@ public class DeviceAuthServiceTests
         var logger = new LoggerFactory().CreateLogger<DeviceAuthService>();
         _service = new DeviceAuthService(opts, appOpts, logger);
 
-        _pump = new PumpController
+        _pump = new PumpCntrl
         {
             Id = 1,
             Uid = Guid.NewGuid().ToString(),
@@ -97,7 +100,7 @@ public class DeviceAuthServiceTests
         var appOpts = Options.Create(new AppSettings { Secret = "secret" });
         var logger = new LoggerFactory().CreateLogger<DeviceAuthService>();
         var svc = new DeviceAuthService(opts, appOpts, logger);
-        var pump = new PumpController
+        var pump = new PumpCntrl
         {
             Id = 2,
             Uid = Guid.NewGuid().ToString(),

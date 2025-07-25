@@ -23,14 +23,17 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-using NUnit.Framework;
 using Microsoft.EntityFrameworkCore;
+
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+using NUnit.Framework;
+
 using Fuelflux.Core.Data;
 using Fuelflux.Core.Models;
 using Fuelflux.Core.Services;
-using System.Threading.Tasks;
-using System.Linq;
-using System.Collections.Generic;
 
 namespace Fuelflux.Core.Tests.Data;
 

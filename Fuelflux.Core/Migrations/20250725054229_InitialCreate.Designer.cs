@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Fuelflux.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250724205521_InitialCreate")]
+    [Migration("20250725054229_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -141,7 +141,7 @@ namespace Fuelflux.Core.Migrations
                         new
                         {
                             Id = 4,
-                            Name = "Котроллер ТРК",
+                            Name = "Контроллер ТРК",
                             RoleId = 4
                         });
                 });

@@ -25,30 +25,32 @@
 
 
 using System;
+using System.Threading.Tasks;
+
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
+using Microsoft.EntityFrameworkCore;
+
+using NUnit.Framework;
+
 using Fuelflux.Core.RestModels;
 using Fuelflux.Core.Services;
 using Fuelflux.Core.Settings;
 using Fuelflux.Core.Controllers;
-using Microsoft.Extensions.Logging;
-using Microsoft.Extensions.Options;
-using Microsoft.EntityFrameworkCore;
 using Fuelflux.Core.Data;
 using Fuelflux.Core.Models;
-using System.Threading.Tasks;
-using PumpModel = Fuelflux.Core.Models.PumpController;
-using NUnit.Framework;
 
 namespace Fuelflux.Core.Tests.Controllers;
 
 [TestFixture]
 public class PumpControllerTests
 {
-    private Fuelflux.Core.Controllers.PumpController _controller = null!;
+    private PumpController _controller = null!;
     private DeviceAuthService _service = null!;
     private AppDbContext _dbContext = null!;
-    private PumpModel _pump = null!;
+    private PumpCntrl _pump = null!;
     private User _user = null!;
 
     [SetUp]
@@ -64,7 +66,7 @@ public class PumpControllerTests
         _service = new DeviceAuthService(opts, appOpts, new LoggerFactory().CreateLogger<DeviceAuthService>());
 
         var fs = new FuelStation { Id = 1, Name = "fs" };
-        _pump = new PumpModel { Id = 1, Uid = Guid.NewGuid().ToString(), FuelStationId = fs.Id, FuelStation = fs };
+        _pump = new PumpCntrl { Id = 1, Uid = Guid.NewGuid().ToString(), FuelStationId = fs.Id, FuelStation = fs };
         var role = new Role { Id = 1, RoleId = UserRoleConstants.Operator, Name = "op" };
         _user = new User
         {

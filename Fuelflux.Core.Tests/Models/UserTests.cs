@@ -24,9 +24,9 @@
 // POSSIBILITY OF SUCH DAMAGE.
 
 using NUnit.Framework;
+
 using Fuelflux.Core.Models;
 using Fuelflux.Core.RestModels;
-using System.Collections.Generic;
 
 namespace Fuelflux.Core.Tests.Models;
 

@@ -23,8 +23,6 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-using NUnit.Framework;
-using Moq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.Filters;
 using Microsoft.AspNetCore.Http;
@@ -32,20 +30,23 @@ using Microsoft.AspNetCore.Mvc.Abstractions;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.Options;
 using Microsoft.Extensions.Logging;
-using System.Collections.Generic;
-using System.Security.Claims;
-using System.Text;
-using System.IdentityModel.Tokens.Jwt;
 using Microsoft.IdentityModel.Tokens;
+
+using System;
+using System.Collections.Generic;
+using System.IdentityModel.Tokens.Jwt;
+using System.Security.Claims;
 using System.Security.Cryptography;
+using System.Text;
+using System.Threading.Tasks;
+
+using Moq;
+using NUnit.Framework;
 
 using Fuelflux.Core.Authorization;
 using Fuelflux.Core.Models;
 using Fuelflux.Core.Settings;
 using Fuelflux.Core.RestModels;
-using System.Threading.Tasks;
-using System;
-using System.Linq;
 using Fuelflux.Core.Services;
 
 namespace Fuelflux.Core.Tests.Authorization;
