@@ -80,6 +80,16 @@ public class FuelfluxControllerPreBase(AppDbContext db, ILogger logger) : Contro
         return StatusCode(StatusCodes.Status404NotFound,
                           new ErrMessage { Msg = $"Не удалось найти топливный бак [number={number}]" });
     }
+    protected ObjectResult _404FuelStation(int id)
+    {
+        return StatusCode(StatusCodes.Status404NotFound,
+                          new ErrMessage { Msg = $"Не удалось найти АЗС [id={id}]" });
+    }
+    protected ObjectResult _404PumpController(int id)
+    {
+        return StatusCode(StatusCodes.Status404NotFound,
+                          new ErrMessage { Msg = $"Не удалось найти контроллер ТРК [id={id}]" });
+    }
     protected ObjectResult _409Email(string email)
     {
         return StatusCode(StatusCodes.Status409Conflict,
