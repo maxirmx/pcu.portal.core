@@ -21,10 +21,14 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
 
     [HttpPost("authorize")]
     [AllowAnonymous]
-    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(TokenResponse))]
-    public async Task<ActionResult<TokenResponse>> Authorize(DeviceAuthorizeRequest request)
+    [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(DeviceAuthorizeResponse))]
+    public async Task<ActionResult<DeviceAuthorizeResponse>> Authorize(DeviceAuthorizeRequest request)
     {
-        var pump = await _db.PumpControllers.AsNoTracking().FirstOrDefaultAsync(p => p.Uid == request.PumpControllerUid);
+        var pump = await _db.PumpControllers
+            .AsNoTracking()
+            .Include(p => p.FuelStation)
+                .ThenInclude(fs => fs.FuelTanks)
+            .FirstOrDefaultAsync(p => p.Uid == request.PumpControllerUid);
         var user = await _db.Users.AsNoTracking().Include(u => u.Role).FirstOrDefaultAsync(u => u.Uid == request.UserUid);
 
         if (pump == null || user == null || !(user.IsOperator() || user.IsCustomer()))
@@ -35,7 +39,20 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
         }
 
         var token = _authService.Authorize(pump, user);
-        return Ok(new TokenResponse { Token = token });
+
+        var fuelTanks = pump.FuelStation.FuelTanks
+            .Select(ft => new FuelTankItem { Number = ft.Number, Volume = ft.Allowance })
+            .ToList();
+
+        var response = new DeviceAuthorizeResponse
+        {
+            Token = token,
+            RoleId = (int)user.Role!.RoleId,
+            FuelTanks = fuelTanks,
+            Allowance = user.IsCustomer() ? user.Allowance : null
+        };
+
+        return Ok(response);
     }
 
     [HttpPost("deauthorize")]
