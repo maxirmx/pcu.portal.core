@@ -69,8 +69,8 @@ public class PumpControllerRefuelTests
 
         var fs = new FuelStation { Id = 1, Name = "fs" };
         _pump = new PumpCntrl { Id = 1, Uid = Guid.NewGuid().ToString(), FuelStationId = fs.Id, FuelStation = fs };
-        var tank1 = new FuelTank { Id = 1, Number = 1, Allowance = 500m, FuelStationId = fs.Id, FuelStation = fs };
-        var tank2 = new FuelTank { Id = 2, Number = 2, Allowance = 1000m, FuelStationId = fs.Id, FuelStation = fs };
+        var tank1 = new FuelTank { Id = 1, Number = 1, Volume = 500m, FuelStationId = fs.Id, FuelStation = fs };
+        var tank2 = new FuelTank { Id = 2, Number = 2, Volume = 1000m, FuelStationId = fs.Id, FuelStation = fs };
         var role = new Role { Id = 1, RoleId = UserRoleConstants.Operator, Name = "op" };
         _operator = new User { Id = 1, Email = "a@b.c", Password = "p", Uid = "uid", RoleId = role.Id, Role = role };
         _dbContext.FuelStations.Add(fs);
@@ -118,7 +118,7 @@ public class PumpControllerRefuelTests
         Assert.That(result, Is.TypeOf<NoContentResult>());
         var tank = _dbContext.FuelTanks.First(t => t.Id == 1);
         var userFromDb = _dbContext.Users.First(u => u.Id == customer.Id);
-        Assert.That(tank.Allowance, Is.EqualTo(400m));
+        Assert.That(tank.Volume, Is.EqualTo(400m));
         Assert.That(userFromDb.Allowance, Is.EqualTo(100m));
     }
 
@@ -249,13 +249,13 @@ public class PumpControllerRefuelTests
         _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
         _controller.ControllerContext.HttpContext.Items["UserUid"] = customer.Uid;
 
-        var initialVolume = _dbContext.FuelTanks.First(t => t.Number == 2).Allowance;
+        var initialVolume = _dbContext.FuelTanks.First(t => t.Number == 2).Volume;
         var req = new RefuelRequest { TankNumber = 2, RefuelVolume = 50.5m };
         var result = await _controller.Refuel(req);
 
         Assert.That(result, Is.TypeOf<NoContentResult>());
         var tank = _dbContext.FuelTanks.First(t => t.Number == 2);
-        Assert.That(tank.Allowance, Is.EqualTo(initialVolume - 50.5m));
+        Assert.That(tank.Volume, Is.EqualTo(initialVolume - 50.5m));
     }
 
     [Test]
@@ -266,14 +266,14 @@ public class PumpControllerRefuelTests
         _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
         _controller.ControllerContext.HttpContext.Items["UserUid"] = customer.Uid;
 
-        var initialVolume = _dbContext.FuelTanks.First(t => t.Number == 1).Allowance;
+        var initialVolume = _dbContext.FuelTanks.First(t => t.Number == 1).Volume;
         var largeVolume = 9999.99m;
         var req = new RefuelRequest { TankNumber = 1, RefuelVolume = largeVolume };
         var result = await _controller.Refuel(req);
 
         Assert.That(result, Is.TypeOf<NoContentResult>());
         var tank = _dbContext.FuelTanks.First(t => t.Number == 1);
-        Assert.That(tank.Allowance, Is.EqualTo(initialVolume - largeVolume));
+        Assert.That(tank.Volume, Is.EqualTo(initialVolume - largeVolume));
     }
 
     [Test]

@@ -121,7 +121,7 @@ public class FuelStationController(
         var tank = new FuelTank
         {
             Number = item.Number,
-            Allowance = item.Allowance ?? 0m,
+            Volume = item.Volume,
             FuelStationId = item.FuelStationId
         };
         _db.FuelTanks.Add(tank);
@@ -140,7 +140,7 @@ public class FuelStationController(
         var tank = await _db.FuelTanks.FindAsync(id);
         if (tank == null) return _404FuelTank(id);
         if (item.Number != null) tank.Number = item.Number.Value;
-        if (item.Allowance != null) tank.Allowance = item.Allowance.Value;
+        if (item.Volume != null) tank.Volume = item.Volume.Value;
         if (item.FuelStationId != null) tank.FuelStationId = item.FuelStationId.Value;
         _db.Entry(tank).State = EntityState.Modified;
         await _db.SaveChangesAsync();

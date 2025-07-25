@@ -70,8 +70,8 @@ public class PumpControllerTests
 
         var fs = new FuelStation { Id = 1, Name = "fs" };
         _pump = new PumpCntrl { Id = 1, Uid = Guid.NewGuid().ToString(), FuelStationId = fs.Id, FuelStation = fs };
-        var tank1 = new FuelTank { Id = 1, Number = 1, Allowance = 500m, FuelStationId = fs.Id, FuelStation = fs };
-        var tank2 = new FuelTank { Id = 2, Number = 2, Allowance = 1000m, FuelStationId = fs.Id, FuelStation = fs };
+        var tank1 = new FuelTank { Id = 1, Number = 1, Volume = 500m, FuelStationId = fs.Id, FuelStation = fs };
+        var tank2 = new FuelTank { Id = 2, Number = 2, Volume = 1000m, FuelStationId = fs.Id, FuelStation = fs };
         var role = new Role { Id = 1, RoleId = UserRoleConstants.Operator, Name = "op" };
         _user = new User
         {
@@ -230,7 +230,7 @@ public class PumpControllerTests
 
         Assert.That(result, Is.TypeOf<NoContentResult>());
         var tank = _dbContext.FuelTanks.First(t => t.Id == 1);
-        Assert.That(tank.Allowance, Is.EqualTo(600m));
+        Assert.That(tank.Volume, Is.EqualTo(600m));
     }
 
     [Test]
@@ -367,13 +367,13 @@ public class PumpControllerTests
         _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
         _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
 
-        var initialVolume = _dbContext.FuelTanks.First(t => t.Number == 2).Allowance;
+        var initialVolume = _dbContext.FuelTanks.First(t => t.Number == 2).Volume;
         var req = new FuelIntakeRequest { TankNumber = 2, IntakeVolume = 250.5m };
         var result = await _controller.FuelIntake(req);
 
         Assert.That(result, Is.TypeOf<NoContentResult>());
         var tank = _dbContext.FuelTanks.First(t => t.Number == 2);
-        Assert.That(tank.Allowance, Is.EqualTo(initialVolume + 250.5m));
+        Assert.That(tank.Volume, Is.EqualTo(initialVolume + 250.5m));
     }
 
     [Test]
@@ -383,14 +383,14 @@ public class PumpControllerTests
         _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
         _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
 
-        var initialVolume = _dbContext.FuelTanks.First(t => t.Number == 1).Allowance;
+        var initialVolume = _dbContext.FuelTanks.First(t => t.Number == 1).Volume;
         var largeVolume = 9999.99m;
         var req = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = largeVolume };
         var result = await _controller.FuelIntake(req);
 
         Assert.That(result, Is.TypeOf<NoContentResult>());
         var tank = _dbContext.FuelTanks.First(t => t.Number == 1);
-        Assert.That(tank.Allowance, Is.EqualTo(initialVolume + largeVolume));
+        Assert.That(tank.Volume, Is.EqualTo(initialVolume + largeVolume));
     }
 
     [Test]

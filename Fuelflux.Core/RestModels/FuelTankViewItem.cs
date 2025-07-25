@@ -8,7 +8,7 @@ public class FuelTankViewItem(FuelTank tank)
 {
     public int Id { get; set; } = tank.Id;
     public decimal Number { get; set; } = tank.Number;
-    public decimal Allowance { get; set; } = tank.Allowance;
+    public decimal Allowance { get; set; } = tank.Volume;
     public int FuelStationId { get; set; } = tank.FuelStationId;
 
     public override string ToString()
