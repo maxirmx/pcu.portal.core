@@ -132,7 +132,7 @@ public class UsersController(
             Password = hashToStoreInDb,
             Allowance = user.HasRole(UserRoleConstants.Customer) ? user.Allowance : null,
             Uid = user.HasRole(UserRoleConstants.Customer) || user.HasRole(UserRoleConstants.Operator) ? user.Uid : null,
-            RoleId = user.Role != null ? (int)user.Role.Value : null
+            RoleId = user.Role != null ? (await _db.Roles.FirstOrDefaultAsync(r => r.RoleId == user.Role.Value))?.Id : null
         };
 
         _db.Users.Add(ur);
@@ -184,15 +184,22 @@ public class UsersController(
         if (update.Patronymic != null) user.Patronymic = update.Patronymic;
         if (isAdmin)
         {
-            if (update.Role != user.Role?.RoleId)
+
+            if (update.Role == null)
             {
-                user.RoleId = update.Role != null ? (int)update.Role.Value : null;
+                user.RoleId = null;
+            }
+            else
+            {
+                var role = await _db.Roles.FirstOrDefaultAsync(r => r.RoleId == update.Role.Value);
+                user.RoleId = role?.Id;
             }
             if (update.Allowance != user.Allowance)
                 user.Allowance = user.Role?.RoleId == UserRoleConstants.Customer ? update.Allowance : null;
-            if (update.Uid != user.Uid) user.Uid = update.Uid;
-            user.Uid = user.Role?.RoleId == UserRoleConstants.Customer ||
-                       user.Role?.RoleId == UserRoleConstants.Operator ? update.Uid : null;
+            if (update.Uid != user.Uid) 
+                user.Uid = user.Role?.RoleId == UserRoleConstants.Customer ||
+                           user.Role?.RoleId == UserRoleConstants.Operator ||
+                           user.Role?.RoleId == UserRoleConstants.Controller ? update.Uid : null;
         }
         if (update.Password != null) user.Password = BCrypt.Net.BCrypt.HashPassword(update.Password);
 

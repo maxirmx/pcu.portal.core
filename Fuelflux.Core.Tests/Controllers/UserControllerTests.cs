@@ -389,7 +389,7 @@ public class UsersControllerTests
         Assert.That(savedUser!.Email, Is.EqualTo("new@example.com"));
         // Check that password was hashed
         Assert.That(BCrypt.Net.BCrypt.Verify("newpassword", savedUser.Password), Is.True);
-        Assert.That(savedUser.RoleId, Is.EqualTo((int)UserRoleConstants.Customer));
+        Assert.That(savedUser.RoleId, Is.EqualTo(_customerRole.Id));
     }
 
     [Test]
@@ -531,7 +531,7 @@ public class UsersControllerTests
         Assert.That(updatedUser!.FirstName, Is.EqualTo("Updated"));
         Assert.That(updatedUser.LastName, Is.EqualTo("Name"));
         Assert.That(updatedUser.Email, Is.EqualTo("updated@example.com"));
-        Assert.That(updatedUser.RoleId, Is.EqualTo((int)UserRoleConstants.Customer));
+        Assert.That(updatedUser.RoleId, Is.EqualTo(_customerRole.Id));
     }
 
     [Test]
