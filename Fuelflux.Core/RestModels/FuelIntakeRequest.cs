@@ -30,7 +30,7 @@ namespace Fuelflux.Core.RestModels;
 public class FuelIntakeRequest
 {
     [Required(ErrorMessage = "номер резервуара обязателен.")]
-    [Range(1, int.MaxValue, ErrorMessage = "номер резервуара должен быть положительным числом.")]
+    [Range(1, 999, ErrorMessage = "номер резервуара должен быть положительным числом до 999 включительно.")]
     public decimal TankNumber { get; set; }
 
     [Required(ErrorMessage = "oбъем принятого топлива обязателен.")]
