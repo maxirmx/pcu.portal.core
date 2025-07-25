@@ -38,11 +38,10 @@ namespace Fuelflux.Core.Controllers;
 [Route("api/[controller]")]
 [ProducesResponseType(StatusCodes.Status401Unauthorized, Type = typeof(ErrMessage))]
 
-public class PumpController(IDeviceAuthService authService, AppDbContext db, ILogger<PumpController> logger) : ControllerBase
+public class PumpController(IDeviceAuthService authService, AppDbContext db, ILogger<PumpController> logger) :
+    FuelfluxControllerPreBase(db, logger)
 {
     private readonly IDeviceAuthService _authService = authService;
-    private readonly AppDbContext _db = db;
-    private readonly ILogger<PumpController> _logger = logger;
 
     [HttpPost("authorize")]
     [AllowAnonymous]
@@ -56,11 +55,9 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
             .FirstOrDefaultAsync(p => p.Uid == request.PumpControllerUid);
         var user = await _db.Users.AsNoTracking().Include(u => u.Role).FirstOrDefaultAsync(u => u.Uid == request.UserUid);
 
-        if (pump == null || user == null || !(user.IsOperator() || user.IsCustomer()))
+        if (pump == null || user == null || !(user.IsOperator() || user.IsCustomer() || user.IsController()))
         {
-            const string errorMessage = "Необходимо войти в систему.";
-            _logger.LogWarning(errorMessage);
-            return StatusCode(StatusCodes.Status401Unauthorized, new ErrMessage { Msg = errorMessage });
+            return _403();
         }
 
         var token = _authService.Authorize(pump, user);
@@ -74,7 +71,8 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
             Token = token,
             RoleId = (int)user.Role!.RoleId,
             FuelTanks = fuelTanks,
-            Allowance = user.IsCustomer() ? user.Allowance : null
+            Allowance = user.IsCustomer() ? user.Allowance : null,
+            Price = user.IsCustomer() ? 63.09m : null
         };
 
         return Ok(response);

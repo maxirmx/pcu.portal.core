@@ -9,6 +9,7 @@ public class DeviceAuthorizeResponse
     public int RoleId { get; set; }
     public IEnumerable<FuelTankItem> FuelTanks { get; set; } = [];
     public decimal? Allowance { get; set; }
+    public decimal? Price { get; set; }
 
     public override string ToString()
     {

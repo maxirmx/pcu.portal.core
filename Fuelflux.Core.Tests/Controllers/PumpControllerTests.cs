@@ -25,6 +25,7 @@
 
 
 using System;
+using System.Linq;
 using System.Threading.Tasks;
 
 using Microsoft.AspNetCore.Http;
@@ -155,7 +156,7 @@ public class PumpControllerTests
         var result = await _controller.Authorize(req);
         Assert.That(result.Result, Is.TypeOf<ObjectResult>());
         var obj = result.Result as ObjectResult;
-        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status401Unauthorized));
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
     }
 
     [Test]
@@ -165,7 +166,7 @@ public class PumpControllerTests
         var result = await _controller.Authorize(req);
         Assert.That(result.Result, Is.TypeOf<ObjectResult>());
         var obj = result.Result as ObjectResult;
-        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status401Unauthorized));
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
     }
 
     [Test]
@@ -195,5 +196,6 @@ public class PumpControllerTests
         var response = (result.Result as OkObjectResult)!.Value as DeviceAuthorizeResponse;
         Assert.That(response, Is.Not.Null);
         Assert.That(response!.Allowance, Is.EqualTo(customer.Allowance));
+        Assert.That(response!.Price, Is.Not.Null);
     }
 }
