@@ -11,7 +11,7 @@ using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 namespace Fuelflux.Core.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    [Migration("20250725054229_InitialCreate")]
+    [Migration("20250725055619_InitialCreate")]
     partial class InitialCreate
     {
         /// <inheritdoc />
@@ -72,7 +72,7 @@ namespace Fuelflux.Core.Migrations
                     b.ToTable("fuel_tanks");
                 });
 
-            modelBuilder.Entity("Fuelflux.Core.Models.PumpController", b =>
+            modelBuilder.Entity("Fuelflux.Core.Models.PumpCntrl", b =>
                 {
                     b.Property<int>("Id")
                         .ValueGeneratedOnAdd()
@@ -124,25 +124,25 @@ namespace Fuelflux.Core.Migrations
                         {
                             Id = 1,
                             Name = "Администратор системы",
-                            RoleId = 1
+                            RoleId = 1000
                         },
                         new
                         {
                             Id = 2,
                             Name = "Оператор АЗС",
-                            RoleId = 2
+                            RoleId = 1
                         },
                         new
                         {
                             Id = 3,
                             Name = "Клиент",
-                            RoleId = 3
+                            RoleId = 2
                         },
                         new
                         {
                             Id = 4,
                             Name = "Контроллер ТРК",
-                            RoleId = 4
+                            RoleId = 3
                         });
                 });
 
@@ -226,7 +226,7 @@ namespace Fuelflux.Core.Migrations
                     b.Navigation("FuelStation");
                 });
 
-            modelBuilder.Entity("Fuelflux.Core.Models.PumpController", b =>
+            modelBuilder.Entity("Fuelflux.Core.Models.PumpCntrl", b =>
                 {
                     b.HasOne("Fuelflux.Core.Models.FuelStation", "FuelStation")
                         .WithMany("PumpControllers")

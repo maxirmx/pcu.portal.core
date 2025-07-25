@@ -27,10 +27,10 @@ namespace Fuelflux.Core.Models
 {
     public enum UserRoleConstants
     {
-        Admin = 1,
-        Operator = 2,
-        Customer = 3,
-        Controller = 4
+        Admin = 1000,
+        Operator = 1,
+        Customer = 2,
+        Controller = 3
     }
 }
 
