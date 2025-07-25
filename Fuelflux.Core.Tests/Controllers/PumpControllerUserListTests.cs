@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -74,7 +76,8 @@ public class PumpControllerUserListTests
         _dbContext.Users.AddRange(op1, cust, op2);
         _dbContext.SaveChanges();
 
-        var result = await _controller.GetPumpUsers(1, 2);
+        var req = new PumpUserRequest { First = 1, Number = 2 };
+        var result = await _controller.GetPumpUsers(req);
 
         Assert.That(result.Value, Is.Not.Null);
         var items = result.Value!.ToList();
@@ -95,7 +98,8 @@ public class PumpControllerUserListTests
         _dbContext.SaveChanges();
 
         _controller.ControllerContext.HttpContext.Items["UserUid"] = opUser.Uid;
-        var result = await _controller.GetPumpUsers(0, 1);
+        var req = new PumpUserRequest { First = 0, Number = 1 };
+        var result = await _controller.GetPumpUsers(req);
 
         Assert.That(result.Result, Is.TypeOf<ObjectResult>());
         var obj = result.Result as ObjectResult;
@@ -111,8 +115,48 @@ public class PumpControllerUserListTests
         _dbContext.Users.Add(new User { Id = 2, Email = "o1@a", Password = "p", Uid = "op1", RoleId = opRole.Id, Role = opRole });
         _dbContext.SaveChanges();
 
-        var result = await _controller.GetPumpUsers(10, 5);
+        var req = new PumpUserRequest { First = 10, Number = 5 };
+        var result = await _controller.GetPumpUsers(req);
 
         Assert.That(result.Result, Is.TypeOf<NoContentResult>());
+    }
+
+    [Test]
+    public void PumpUserRequest_Validation_RequiresNonNegativeFirst()
+    {
+        var request = new PumpUserRequest { First = -1, Number = 1 };
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(request, context, results, true);
+
+        Assert.That(isValid, Is.False);
+        Assert.That(results.Any(r => r.MemberNames.Contains(nameof(PumpUserRequest.First))), Is.True);
+    }
+
+    [Test]
+    public void PumpUserRequest_Validation_RequiresPositiveNumber()
+    {
+        var request = new PumpUserRequest { First = 0, Number = 0 };
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(request, context, results, true);
+
+        Assert.That(isValid, Is.False);
+        Assert.That(results.Any(r => r.MemberNames.Contains(nameof(PumpUserRequest.Number))), Is.True);
+    }
+
+    [Test]
+    public void PumpUserRequest_Validation_AcceptsValidInput()
+    {
+        var request = new PumpUserRequest { First = 0, Number = 5 };
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(request, context, results, true);
+
+        Assert.That(isValid, Is.True);
+        Assert.That(results, Is.Empty);
     }
 }
