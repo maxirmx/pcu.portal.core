@@ -104,7 +104,7 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
         {
             var firstError = ModelState.Values
                 .SelectMany(v => v.Errors)
-                .FirstOrDefault()?.ErrorMessage ?? "неизвестная проблема.";
+                .FirstOrDefault()?.ErrorMessage ?? "Г­ГҐГЁГ§ГўГҐГ±ГІГ­Г Гї ГЇГ°Г®ГЎГ«ГҐГ¬Г .";
             
             _logger.LogWarning("Model validation failed: {Error}", firstError);
             return _400Intake(firstError);
@@ -149,6 +149,75 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
 
         _logger.LogInformation("Fuel intake successful: Tank {TankNumber}, Volume {IntakeVolume}, New Total {NewTotal}", 
             request.TankNumber, request.IntakeVolume, tank.Allowance);
+
+        return NoContent();
+    }
+
+    [HttpPost("refuel")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrMessage))]
+    [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
+    [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ErrMessage))]
+    public async Task<IActionResult> Refuel(RefuelRequest request)
+    {
+        if (request == null)
+        {
+            return _400();
+        }
+
+        if (!ModelState.IsValid)
+        {
+            var firstError = ModelState.Values
+                .SelectMany(v => v.Errors)
+                .FirstOrDefault()?.ErrorMessage ?? " .";
+
+            _logger.LogWarning("Model validation failed: {Error}", firstError);
+            return _400Refuel(firstError);
+        }
+
+        var userUid = HttpContext.Items["UserUid"] as string;
+        if (userUid == null)
+        {
+            return _403();
+        }
+
+        var user = await _db.Users.Include(u => u.Role).FirstOrDefaultAsync(u => u.Uid == userUid);
+        if (user == null || !user.IsCustomer())
+        {
+            return _403();
+        }
+
+        var pumpUid = HttpContext.Items["PumpControllerUid"] as string;
+        if (pumpUid == null)
+        {
+            return _403();
+        }
+
+        var pump = await _db.PumpControllers
+            .Include(p => p.FuelStation)
+                .ThenInclude(fs => fs.FuelTanks)
+            .FirstOrDefaultAsync(p => p.Uid == pumpUid);
+
+        if (pump == null)
+        {
+            return _403();
+        }
+
+        var tank = pump.FuelStation.FuelTanks.FirstOrDefault(t => t.Number == request.TankNumber);
+        if (tank == null)
+        {
+            return _404FuelTank(request.TankNumber);
+        }
+
+        tank.Allowance -= request.RefuelVolume;
+        if (user.Allowance != null)
+        {
+            user.Allowance -= request.RefuelVolume;
+        }
+        await _db.SaveChangesAsync();
+
+        _logger.LogInformation("Refuel successful: Tank {TankNumber}, Volume {RefuelVolume}, Tank Left {TankLeft}",
+            request.TankNumber, request.RefuelVolume, tank.Allowance);
 
         return NoContent();
     }

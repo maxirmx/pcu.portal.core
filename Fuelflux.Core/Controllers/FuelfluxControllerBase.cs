@@ -43,6 +43,11 @@ public class FuelfluxControllerPreBase(AppDbContext db, ILogger logger) : Contro
         return StatusCode(StatusCodes.Status400BadRequest,
                           new ErrMessage() { Msg = $"Некорректный запрос \"приём топлива\": {msg}" });
     }
+    protected ObjectResult _400Refuel(string msg)
+    {
+        return StatusCode(StatusCodes.Status400BadRequest,
+                          new ErrMessage() { Msg = $"Некорректный запрос \"заправка\": {msg}" });
+    }
 
     protected ObjectResult _401()
     {
