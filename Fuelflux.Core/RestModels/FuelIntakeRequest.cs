@@ -1,14 +1,39 @@
+п»ї// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
+// All rights reserved.
+// This file is a part of Fuelflux Core application
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions
+// are met:
+// 1. Redistributions of source code must retain the above copyright
+// notice, this list of conditions and the following disclaimer.
+// 2. Redistributions in binary form must reproduce the above copyright
+// notice, this list of conditions and the following disclaimer in the
+// documentation and/or other materials provided with the distribution.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+// ``AS IS'' AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED
+// TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+// PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS
+// BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
+
 using System.ComponentModel.DataAnnotations;
 
 namespace Fuelflux.Core.RestModels;
 
 public class FuelIntakeRequest
 {
-    [Required(ErrorMessage = "номер резервуара обязателен.")]
-    [Range(1, int.MaxValue, ErrorMessage = "номер резервуара должен быть положительным числом.")]
+    [Required(ErrorMessage = "РЅРѕРјРµСЂ СЂРµР·РµСЂРІСѓР°СЂР° РѕР±СЏР·Р°С‚РµР»РµРЅ.")]
+    [Range(1, int.MaxValue, ErrorMessage = "РЅРѕРјРµСЂ СЂРµР·РµСЂРІСѓР°СЂР° РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РїРѕР»РѕР¶РёС‚РµР»СЊРЅС‹Рј С‡РёСЃР»РѕРј.")]
     public int TankNumber { get; set; }
 
-    [Required(ErrorMessage = "oбъем принятого топлива обязателен.")]
-    [Range(0.01, double.MaxValue, ErrorMessage = "объем принятого топлива должен быть положительным числом.")]
+    [Required(ErrorMessage = "oР±СЉРµРј РїСЂРёРЅСЏС‚РѕРіРѕ С‚РѕРїР»РёРІР° РѕР±СЏР·Р°С‚РµР»РµРЅ.")]
+    [Range(0.01, double.MaxValue, ErrorMessage = "РѕР±СЉРµРј РїСЂРёРЅСЏС‚РѕРіРѕ С‚РѕРїР»РёРІР° РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РїРѕР»РѕР¶РёС‚РµР»СЊРЅС‹Рј С‡РёСЃР»РѕРј.")]
     public decimal IntakeVolume { get; set; }
 }

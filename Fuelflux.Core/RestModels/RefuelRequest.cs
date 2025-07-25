@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
+п»ї// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
 // All rights reserved.
 // This file is a part of Fuelflux Core application
 //
@@ -29,11 +29,11 @@ namespace Fuelflux.Core.RestModels;
 
 public class RefuelRequest
 {
-    [Required(ErrorMessage = "номер резервуара обязателен.")]
-    [Range(1, int.MaxValue, ErrorMessage = "номер резервуара должен быть положительным числом.")]
+    [Required(ErrorMessage = "РЅРѕРјРµСЂ СЂРµР·РµСЂРІСѓР°СЂР° РѕР±СЏР·Р°С‚РµР»РµРЅ.")]
+    [Range(1, int.MaxValue, ErrorMessage = "РЅРѕРјРµСЂ СЂРµР·РµСЂРІСѓР°СЂР° РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РїРѕР»РѕР¶РёС‚РµР»СЊРЅС‹Рј С‡РёСЃР»РѕРј.")]
     public int TankNumber { get; set; }
 
-    [Required(ErrorMessage = "oбъем заправленного топлива обязателен.")]
-    [Range(0.01, double.MaxValue, ErrorMessage = "объем заправленного топлива должен быть положительным числом.")]
+    [Required(ErrorMessage = "oР±СЉРµРј Р·Р°РїСЂР°РІР»РµРЅРЅРѕРіРѕ С‚РѕРїР»РёРІР° РѕР±СЏР·Р°С‚РµР»РµРЅ.")]
+    [Range(0.01, double.MaxValue, ErrorMessage = "РѕР±СЉРµРј Р·Р°РїСЂР°РІР»РµРЅРЅРѕРіРѕ С‚РѕРїР»РёРІР° РґРѕР»Р¶РµРЅ Р±С‹С‚СЊ РїРѕР»РѕР¶РёС‚РµР»СЊРЅС‹Рј С‡РёСЃР»РѕРј.")]
     public decimal RefuelVolume { get; set; }
 }
