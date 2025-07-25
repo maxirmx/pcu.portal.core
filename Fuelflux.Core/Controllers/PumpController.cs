@@ -30,6 +30,7 @@ using Fuelflux.Core.Authorization;
 using Fuelflux.Core.RestModels;
 using Fuelflux.Core.Services;
 using Fuelflux.Core.Data;
+using Fuelflux.Core.Models;
 
 namespace Fuelflux.Core.Controllers;
 
@@ -225,9 +226,15 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
     [HttpGet("users")]
     [ProducesResponseType(StatusCodes.Status200OK, Type = typeof(IEnumerable<PumpUserItem>))]
     [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrMessage))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
-    public async Task<ActionResult<IEnumerable<PumpUserItem>>> GetPumpUsers(int first, int number)
+    public async Task<ActionResult<IEnumerable<PumpUserItem>>> GetPumpUsers([FromQuery] PumpUserRequest request)
     {
+        if (!ModelState.IsValid)
+        {
+            return _400();
+        }
+
         var userUid = HttpContext.Items["UserUid"] as string;
         if (userUid == null)
         {
@@ -243,10 +250,12 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
         var res = await _db.Users
             .AsNoTracking()
             .Include(u => u.Role)
-            .Where(u => u.Role != null && u.Uid != null && (u.IsCustomer() || u.IsOperator()))
+            .Where(u => u.Role != null && u.Uid != null &&
+                        (u.Role!.RoleId == UserRoleConstants.Customer ||
+                         u.Role.RoleId == UserRoleConstants.Operator))
             .OrderBy(u => u.Id)
-            .Skip(first)
-            .Take(number)
+            .Skip(request.First)
+            .Take(request.Number)
             .Select(u => new PumpUserItem
             {
                 Uid = u.Uid,
