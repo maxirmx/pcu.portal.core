@@ -228,7 +228,7 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrMessage))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
-    public async Task<ActionResult<IEnumerable<PumpUserItem>>> GetPumpUsers(PumpUserRequest request)
+    public async Task<ActionResult<IEnumerable<PumpUserItem>>> GetPumpUsers([FromQuery] PumpUserRequest request)
     {
         if (!ModelState.IsValid)
         {
