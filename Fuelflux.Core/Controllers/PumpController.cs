@@ -1,4 +1,4 @@
-// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
+﻿// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
 // All rights reserved.
 // This file is a part of Fuelflux Core application
 //
@@ -104,7 +104,7 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
         {
             var firstError = ModelState.Values
                 .SelectMany(v => v.Errors)
-                .FirstOrDefault()?.ErrorMessage ?? "íåèçâåñòíàÿ ïðîáëåìà.";
+                .FirstOrDefault()?.ErrorMessage ?? "неизвестная проблема.";
             
             _logger.LogWarning("Model validation failed: {Error}", firstError);
             return _400Intake(firstError);
@@ -169,7 +169,7 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
         {
             var firstError = ModelState.Values
                 .SelectMany(v => v.Errors)
-                .FirstOrDefault()?.ErrorMessage ?? " .";
+                .FirstOrDefault()?.ErrorMessage ?? "неизвестная проблема.";
 
             _logger.LogWarning("Model validation failed: {Error}", firstError);
             return _400Refuel(firstError);

@@ -92,10 +92,10 @@ public class PumpControllerTests
         _dbContext.Users.Add(_user);
         _dbContext.SaveChanges();
 
-        _controller = new Fuelflux.Core.Controllers.PumpController(
+        _controller = new PumpController(
             _service,
             _dbContext,
-            new LoggerFactory().CreateLogger<Fuelflux.Core.Controllers.PumpController>());
+            new LoggerFactory().CreateLogger<PumpController>());
     }
 
     [TearDown]
