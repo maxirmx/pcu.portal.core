@@ -48,10 +48,10 @@ public class FuelStationController(
     [HttpPost("stations")]
     [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(Reference))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
-    public async Task<ActionResult<Reference>> PostStation(FuelStationCreateItem item)
+    public async Task<ActionResult<Reference>> PostStation(FuelStationItem item)
     {
         if (!await _uis.CheckAdmin(_curUserId)) return _403();
-        var fs = new FuelStation { Name = item.Name };
+        var fs = new FuelStation { Name = item.Name ?? string.Empty };
         _db.FuelStations.Add(fs);
         await _db.SaveChangesAsync();
         var reference = new Reference { Id = fs.Id };
@@ -62,7 +62,7 @@ public class FuelStationController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
     [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ErrMessage))]
-    public async Task<IActionResult> PutStation(int id, FuelStationUpdateItem item)
+    public async Task<IActionResult> PutStation(int id, FuelStationItem item)
     {
         if (!await _uis.CheckAdmin(_curUserId)) return _403();
         var fs = await _db.FuelStations.FindAsync(id);
@@ -115,14 +115,14 @@ public class FuelStationController(
     [HttpPost("tanks")]
     [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(Reference))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
-    public async Task<ActionResult<Reference>> PostTank(FuelTankCreateItem item)
+    public async Task<ActionResult<Reference>> PostTank(FuelTankViewItem item)
     {
         if (!await _uis.CheckAdmin(_curUserId)) return _403();
         var tank = new FuelTank
         {
-            Number = item.Number,
-            Volume = item.Volume,
-            FuelStationId = item.FuelStationId
+            Number = item.Number ?? 0,
+            Volume = item.Volume ?? 0,
+            FuelStationId = item.FuelStationId ?? 0
         };
         _db.FuelTanks.Add(tank);
         await _db.SaveChangesAsync();
@@ -134,7 +134,7 @@ public class FuelStationController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
     [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ErrMessage))]
-    public async Task<IActionResult> PutTank(int id, FuelTankUpdateItem item)
+    public async Task<IActionResult> PutTank(int id, FuelTankViewItem item)
     {
         if (!await _uis.CheckAdmin(_curUserId)) return _403();
         var tank = await _db.FuelTanks.FindAsync(id);
@@ -189,13 +189,13 @@ public class FuelStationController(
     [HttpPost("pumps")]
     [ProducesResponseType(StatusCodes.Status201Created, Type = typeof(Reference))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
-    public async Task<ActionResult<Reference>> PostPump(PumpControllerCreateItem item)
+    public async Task<ActionResult<Reference>> PostPump(PumpControllerItem item)
     {
         if (!await _uis.CheckAdmin(_curUserId)) return _403();
         var pump = new PumpCntrl
         {
-            Uid = item.Uid,
-            FuelStationId = item.FuelStationId
+            Uid = item.Uid ?? string.Empty,
+            FuelStationId = item.FuelStationId ?? 0
         };
         _db.PumpControllers.Add(pump);
         await _db.SaveChangesAsync();
@@ -207,7 +207,7 @@ public class FuelStationController(
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
     [ProducesResponseType(StatusCodes.Status404NotFound, Type = typeof(ErrMessage))]
-    public async Task<IActionResult> PutPump(int id, PumpControllerUpdateItem item)
+    public async Task<IActionResult> PutPump(int id, PumpControllerItem item)
     {
         if (!await _uis.CheckAdmin(_curUserId)) return _403();
         var pump = await _db.PumpControllers.FindAsync(id);

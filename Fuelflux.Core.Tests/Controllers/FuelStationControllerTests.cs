@@ -58,7 +58,7 @@ public class FuelStationControllerTests
     {
         SetCurrentUser(1);
         _uis.Setup(u => u.CheckAdmin(1)).ReturnsAsync(true);
-        var item = new FuelStationCreateItem { Name = "FS" };
+        var item = new FuelStationItem { Name = "FS" };
         var result = await _controller.PostStation(item);
         Assert.That(result.Result, Is.TypeOf<CreatedAtActionResult>());
         Assert.That(_db.FuelStations.Count(), Is.EqualTo(1));
@@ -69,7 +69,7 @@ public class FuelStationControllerTests
     {
         SetCurrentUser(2);
         _uis.Setup(u => u.CheckAdmin(2)).ReturnsAsync(false);
-        var item = new FuelStationCreateItem { Name = "FS" };
+        var item = new FuelStationItem { Name = "FS" };
         var result = await _controller.PostStation(item);
         Assert.That(result.Result, Is.TypeOf<ObjectResult>());
         var obj = result.Result as ObjectResult;
@@ -81,7 +81,7 @@ public class FuelStationControllerTests
     {
         SetCurrentUser(1);
         _uis.Setup(u => u.CheckAdmin(1)).ReturnsAsync(true);
-        var update = new FuelTankUpdateItem { Number = 1 };
+        var update = new FuelTankViewItem { Number = 1 };
         var result = await _controller.PutTank(1, update);
         Assert.That(result, Is.TypeOf<ObjectResult>());
         var obj = result as ObjectResult;
