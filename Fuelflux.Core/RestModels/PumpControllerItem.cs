@@ -1,4 +1,4 @@
-﻿// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
+// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
 // All rights reserved.
 // This file is a part of Fuelflux Core application
 //
@@ -23,17 +23,29 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-using System.ComponentModel.DataAnnotations;
+using System.Text.Json;
+using Fuelflux.Core.Models;
+using Fuelflux.Core.Settings;
 
 namespace Fuelflux.Core.RestModels;
 
-public class FuelIntakeRequest
+public class PumpControllerItem
 {
-    [Required(ErrorMessage = "номер резервуара обязателен.")]
-    [Range(1, 999, ErrorMessage = "номер резервуара должен быть положительным числом до 999 включительно.")]
-    public decimal TankNumber { get; set; }
+    public PumpControllerItem() { }
 
-    [Required(ErrorMessage = "oбъем принятого топлива обязателен.")]
-    [Range(0.01, double.MaxValue, ErrorMessage = "объем принятого топлива должен быть положительным числом.")]
-    public decimal IntakeVolume { get; set; }
+    public PumpControllerItem(PumpCntrl pump)
+    {
+        Id = pump.Id;
+        Uid = pump.Uid;
+        FuelStationId = pump.FuelStationId;
+    }
+
+    public int Id { get; set; }
+    public string? Uid { get; set; }
+    public int? FuelStationId { get; set; }
+
+    public override string ToString()
+    {
+        return JsonSerializer.Serialize(this, JOptions.DefaultOptions);
+    }
 }

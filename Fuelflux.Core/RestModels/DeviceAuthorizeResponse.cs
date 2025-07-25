@@ -7,7 +7,7 @@ public class DeviceAuthorizeResponse
 {
     public required string Token { get; set; }
     public int RoleId { get; set; }
-    public IEnumerable<FuelTankItem> FuelTanks { get; set; } = [];
+    public IEnumerable<FuelTankInfoItem> FuelTanks { get; set; } = [];
     public decimal? Allowance { get; set; }
     public decimal? Price { get; set; }
 

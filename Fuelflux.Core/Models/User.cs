@@ -48,7 +48,7 @@ namespace Fuelflux.Core.Models
         [Column("password")]
         public required string Password { get; set; }
 
-        [Column("allowance", TypeName = "numeric(5,2)")]
+        [Column("allowance", TypeName = "numeric(10,2)")]
         public decimal? Allowance { get; set; }
 
         [Column("uid")]

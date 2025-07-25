@@ -64,7 +64,7 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
         var token = _authService.Authorize(pump, user);
 
         var fuelTanks = pump.FuelStation.FuelTanks
-            .Select(ft => new FuelTankItem { Number = ft.Number, Volume = ft.Allowance })
+            .Select(ft => new FuelTankInfoItem { Number = ft.Number, Volume = ft.Volume })
             .ToList();
 
         var response = new DeviceAuthorizeResponse
@@ -145,11 +145,11 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
             return _404FuelTank(request.TankNumber);
         }
 
-        tank.Allowance += request.IntakeVolume;
+        tank.Volume += request.IntakeVolume;
         await _db.SaveChangesAsync();
 
         _logger.LogInformation("Fuel intake successful: Tank {TankNumber}, Volume {IntakeVolume}, New Total {NewTotal}", 
-            request.TankNumber, request.IntakeVolume, tank.Allowance);
+            request.TankNumber, request.IntakeVolume, tank.Volume);
 
         return NoContent();
     }
@@ -210,7 +210,7 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
             return _404FuelTank(request.TankNumber);
         }
 
-        tank.Allowance -= request.RefuelVolume;
+        tank.Volume -= request.RefuelVolume;
         if (user.Allowance != null)
         {
             user.Allowance -= request.RefuelVolume;
@@ -218,7 +218,7 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
         await _db.SaveChangesAsync();
 
         _logger.LogInformation("Refuel successful: Tank {TankNumber}, Volume {RefuelVolume}, Tank Left {TankLeft}",
-            request.TankNumber, request.RefuelVolume, tank.Allowance);
+            request.TankNumber, request.RefuelVolume, tank.Volume);
 
         return NoContent();
     }
@@ -228,7 +228,7 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
     [ProducesResponseType(StatusCodes.Status204NoContent)]
     [ProducesResponseType(StatusCodes.Status400BadRequest, Type = typeof(ErrMessage))]
     [ProducesResponseType(StatusCodes.Status403Forbidden, Type = typeof(ErrMessage))]
-    public async Task<ActionResult<IEnumerable<PumpUserItem>>> GetPumpUsers(PumpUserRequest request)
+    public async Task<ActionResult<IEnumerable<PumpUserItem>>> GetPumpUsers([FromQuery] PumpUserRequest request)
     {
         if (!ModelState.IsValid)
         {
@@ -269,7 +269,8 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
             .Select(u => new PumpUserItem
             {
                 Uid = u.Uid!,
-                Allowance = u.IsCustomer() ? u.Allowance : null
+                Allowance = u.IsCustomer() ? u.Allowance : null,
+                RoleId = (int)u.Role!.RoleId
             })
             .ToListAsync();
 
