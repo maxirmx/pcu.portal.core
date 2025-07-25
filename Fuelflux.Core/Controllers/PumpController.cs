@@ -5,7 +5,6 @@ using Fuelflux.Core.Services;
 using Fuelflux.Core.Data;
 using Microsoft.EntityFrameworkCore;
 using Fuelflux.Core.Models;
-using System.Linq;
 
 namespace Fuelflux.Core.Controllers;
 
