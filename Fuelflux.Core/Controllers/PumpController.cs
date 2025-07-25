@@ -243,13 +243,13 @@ public class PumpController(IDeviceAuthService authService, AppDbContext db, ILo
         var res = await _db.Users
             .AsNoTracking()
             .Include(u => u.Role)
-            .Where(u => u.Role != null && (u.IsCustomer() || u.IsOperator()))
+            .Where(u => u.Role != null && u.Uid != null && (u.IsCustomer() || u.IsOperator()))
             .OrderBy(u => u.Id)
             .Skip(first)
             .Take(number)
             .Select(u => new PumpUserItem
             {
-                Uid = u.Uid!,
+                Uid = u.Uid,
                 Allowance = u.IsCustomer() ? u.Allowance : null
             })
             .ToListAsync();
