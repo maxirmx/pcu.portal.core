@@ -27,6 +27,8 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -197,5 +199,231 @@ public class PumpControllerTests
         Assert.That(response, Is.Not.Null);
         Assert.That(response!.Allowance, Is.EqualTo(customer.Allowance));
         Assert.That(response!.Price, Is.Not.Null);
+    }
+
+    [Test]
+    public async Task FuelIntake_AddsVolume_WhenOperator()
+    {
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
+
+        var req = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = 100m };
+        var result = await _controller.FuelIntake(req);
+
+        Assert.That(result, Is.TypeOf<NoContentResult>());
+        var tank = _dbContext.FuelTanks.First(t => t.Id == 1);
+        Assert.That(tank.Allowance, Is.EqualTo(600m));
+    }
+
+    [Test]
+    public async Task FuelIntake_ReturnsNotFound_WhenTankMissing()
+    {
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
+
+        var req = new FuelIntakeRequest { TankNumber = 99, IntakeVolume = 50m };
+        var result = await _controller.FuelIntake(req);
+
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status404NotFound));
+    }
+
+    [Test]
+    public async Task FuelIntake_ReturnsForbidden_WhenUserNotOperator()
+    {
+        var role = new Role { Id = 2, RoleId = UserRoleConstants.Customer, Name = "cust" };
+        var customer = new User { Id = 2, Email = "c@c.c", Password = "p", Uid = "cust", RoleId = role.Id, Role = role };
+        _dbContext.Roles.Add(role);
+        _dbContext.Users.Add(customer);
+        _dbContext.SaveChanges();
+
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = customer.Uid;
+
+        var req = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = 10m };
+        var result = await _controller.FuelIntake(req);
+
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task FuelIntake_ReturnsBadRequest_WhenRequestIsNull()
+    {
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
+
+        var result = await _controller.FuelIntake(null!);
+
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status400BadRequest));
+    }
+
+
+    [Test]
+    public async Task FuelIntake_ReturnsForbidden_WhenUserUidMissing()
+    {
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        // UserUid is intentionally not set
+
+        var req = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = 100m };
+        var result = await _controller.FuelIntake(req);
+
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task FuelIntake_ReturnsForbidden_WhenPumpControllerUidMissing()
+    {
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
+        // PumpControllerUid is intentionally not set
+
+        var req = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = 100m };
+        var result = await _controller.FuelIntake(req);
+
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task FuelIntake_ReturnsForbidden_WhenUserNotFound()
+    {
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = "nonexistent-user-uid";
+
+        var req = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = 100m };
+        var result = await _controller.FuelIntake(req);
+
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task FuelIntake_ReturnsForbidden_WhenPumpNotFound()
+    {
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = "nonexistent-pump-uid";
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
+
+        var req = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = 100m };
+        var result = await _controller.FuelIntake(req);
+
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task FuelIntake_UpdatesCorrectTank_WithValidInput()
+    {
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
+
+        var initialVolume = _dbContext.FuelTanks.First(t => t.Number == 2).Allowance;
+        var req = new FuelIntakeRequest { TankNumber = 2, IntakeVolume = 250.5m };
+        var result = await _controller.FuelIntake(req);
+
+        Assert.That(result, Is.TypeOf<NoContentResult>());
+        var tank = _dbContext.FuelTanks.First(t => t.Number == 2);
+        Assert.That(tank.Allowance, Is.EqualTo(initialVolume + 250.5m));
+    }
+
+    [Test]
+    public async Task FuelIntake_HandlesLargeVolumeCorrectly()
+    {
+        _controller.ControllerContext = new ControllerContext { HttpContext = new DefaultHttpContext() };
+        _controller.ControllerContext.HttpContext.Items["PumpControllerUid"] = _pump.Uid;
+        _controller.ControllerContext.HttpContext.Items["UserUid"] = _user.Uid;
+
+        var initialVolume = _dbContext.FuelTanks.First(t => t.Number == 1).Allowance;
+        var largeVolume = 9999.99m;
+        var req = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = largeVolume };
+        var result = await _controller.FuelIntake(req);
+
+        Assert.That(result, Is.TypeOf<NoContentResult>());
+        var tank = _dbContext.FuelTanks.First(t => t.Number == 1);
+        Assert.That(tank.Allowance, Is.EqualTo(initialVolume + largeVolume));
+    }
+
+    [Test]
+    public void FuelIntakeRequest_Validation_RequiresTankNumber()
+    {
+        var request = new FuelIntakeRequest { IntakeVolume = 100m };
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(request, context, results, true);
+
+        Assert.That(isValid, Is.False);
+        Assert.That(results.Any(r => r.MemberNames.Contains(nameof(FuelIntakeRequest.TankNumber))), Is.True);
+    }
+
+    [Test]
+    public void FuelIntakeRequest_Validation_RequiresPositiveTankNumber()
+    {
+        var request = new FuelIntakeRequest { TankNumber = 0, IntakeVolume = 100m };
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(request, context, results, true);
+
+        Assert.That(isValid, Is.False);
+        Assert.That(results.Any(r => r.MemberNames.Contains(nameof(FuelIntakeRequest.TankNumber)) && 
+                                    r.ErrorMessage!.Contains("положительным числом")), Is.True);
+    }
+
+    [Test]
+    public void FuelIntakeRequest_Validation_RequiresIntakeVolume()
+    {
+        var request = new FuelIntakeRequest { TankNumber = 1 };
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(request, context, results, true);
+
+        Assert.That(isValid, Is.False);
+        Assert.That(results.Any(r => r.MemberNames.Contains(nameof(FuelIntakeRequest.IntakeVolume))), Is.True);
+    }
+
+    [Test]
+    public void FuelIntakeRequest_Validation_RequiresPositiveIntakeVolume()
+    {
+        var request = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = 0m };
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(request, context, results, true);
+
+        Assert.That(isValid, Is.False);
+        Assert.That(results.Any(r => r.MemberNames.Contains(nameof(FuelIntakeRequest.IntakeVolume)) && 
+                                    r.ErrorMessage!.Contains("объем принятого топлива должен быть положительным числом")), Is.True);
+    }
+
+    [Test]
+    public void FuelIntakeRequest_Validation_AcceptsValidInput()
+    {
+        var request = new FuelIntakeRequest { TankNumber = 1, IntakeVolume = 100.5m };
+        var context = new ValidationContext(request);
+        var results = new List<ValidationResult>();
+
+        var isValid = Validator.TryValidateObject(request, context, results, true);
+
+        Assert.That(isValid, Is.True);
+        Assert.That(results, Is.Empty);
     }
 }
