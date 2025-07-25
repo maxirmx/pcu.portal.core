@@ -1,7 +1,3 @@
-// Copyright (C) 2025 Maxim [maxirmx] Samsonov (www.sw.consulting)
-// All rights reserved.
-// This file is a part of Fuelflux Core application
-//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions
 // are met:
@@ -25,17 +21,18 @@
 
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace Fuelflux.Core.Models
-{
-    [Table("user_roles")]
-    public class UserRole
-    {
-        [Column("user_id")]
-        public int UserId { get; set; }
-        public User User { get; set; } = null!;
+namespace Fuelflux.Core.Models;
 
-        [Column("role_id")]
-        public int RoleId { get; set; }
-        public virtual Role Role { get; set; } = null!;
-    }
+[Table("pump_controllers")]
+public class PumpCntrl
+{
+    [Column("id")]
+    public int Id { get; set; }
+
+    [Column("uid")]
+    public required string Uid { get; set; }
+
+    [Column("fuel_station_id")]
+    public int FuelStationId { get; set; }
+    public FuelStation FuelStation { get; set; } = null!;
 }

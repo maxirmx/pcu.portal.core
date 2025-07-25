@@ -34,7 +34,7 @@ using Fuelflux.Core.Data;
 namespace Fuelflux.Core.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(AuthorizationType.User)]
 [Route("api/[controller]")]
 public class AuthController(
     AppDbContext db, 
@@ -54,8 +54,7 @@ public class AuthController(
         _logger.LogDebug("Login attempt for {email}", crd.Email);
 
         User? user = await _db.Users
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
+            .Include(u => u.Role)
             .Where(u => u.Email.ToLower() == crd.Email.ToLower())
             .SingleOrDefaultAsync();
 

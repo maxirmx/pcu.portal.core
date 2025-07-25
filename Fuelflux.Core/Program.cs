@@ -29,6 +29,8 @@ using Fuelflux.Core.Services;
 using Fuelflux.Core.Settings;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.OpenApi.Models;
+using Fuelflux.Core.Jobs;
+using Quartz;
 
 var builder = WebApplication.CreateBuilder(args);
 var config = builder.Configuration;
@@ -51,6 +53,17 @@ builder.Services
     .AddScoped<IJwtUtils, JwtUtils>()
     .AddScoped<IUserInformationService, UserInformationService>()
     .AddSingleton<IDeviceAuthService, DeviceAuthService>()
+    .AddQuartz(q =>
+    {
+        var jobKey = new JobKey("deviceTokenCleanup");
+        q.AddJob<DeviceTokenCleanupJob>(opts => opts.WithIdentity(jobKey));
+        var sc = builder.Configuration.GetSection("DeviceAuth").GetValue<string>("CleanupCron", "0 0 0 * * ?") ?? "0 0 0 * * ?";
+        q.AddTrigger(opts => opts
+            .ForJob(jobKey)
+            .WithIdentity("deviceTokenCleanup-trigger")
+            .WithCronSchedule(sc));
+    })
+    .AddQuartzHostedService(opt => opt.WaitForJobsToComplete = true)
     .AddHttpContextAccessor()
     .AddControllers();
 

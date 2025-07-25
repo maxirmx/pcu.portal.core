@@ -23,27 +23,46 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
+using Fuelflux.Core.Services;
+
 namespace Fuelflux.Core.Authorization;
 
-public class JwtMiddleware
+public class JwtMiddleware(RequestDelegate next)
 {
-    private readonly RequestDelegate _next;
+    private readonly RequestDelegate _next = next;
 
-    public JwtMiddleware(RequestDelegate next)
+    public async Task Invoke(HttpContext context, IJwtUtils jwtUtils, IDeviceAuthService deviceAuthService)
     {
-        _next = next;
-    }
+        var token = context.Request.Headers.Authorization.FirstOrDefault()?.Split(" ").Last();
+        await Task.Delay(1);
 
-    public async Task Invoke(HttpContext context, IJwtUtils jwtUtils)
-    {
-        var token = context.Request.Headers["Authorization"].FirstOrDefault()?.Split(" ").Last();
-        var userId = jwtUtils.ValidateJwtToken(token);
-        if (userId != null)
+        if (!string.IsNullOrEmpty(token))
         {
-            // attach User Id to context on successful jwt validation
-            context.Items["UserId"] = userId.Value;
+            // Store the token in context for later use
+            context.Items["Token"] = token;
+
+            // First try user token validation
+            var userId = jwtUtils.ValidateJwtToken(token);
+            if (userId != null)
+            {
+                // attach User Id to context on successful jwt validation
+                context.Items["UserId"] = userId.Value;
+                context.Items["TokenType"] = "User";
+            }
+            else
+            {
+                // If not a valid user token, try device token validation
+                var deviceValidationResult = deviceAuthService.Validate(token);
+                if (deviceValidationResult != null)
+                {
+                    context.Items["TokenType"] = "Device";
+                    context.Items["PumpControllerUid"] = deviceValidationResult.PumpControllerUid;
+                    context.Items["UserUid"] = deviceValidationResult.UserUid;
+                }
+            }
         }
 
         await _next(context);
     }
 }
+

@@ -39,7 +39,7 @@ using static Microsoft.EntityFrameworkCore.DbLoggerCategory;
 namespace Fuelflux.Core.Controllers;
 
 [ApiController]
-[Authorize]
+[Authorize(AuthorizationType.User)]
 [Route("api/[controller]")]
 [Produces("application/json")]
 [ProducesResponseType(StatusCodes.Status401Unauthorized, Type = typeof(ErrMessage))]
@@ -81,7 +81,7 @@ public class UsersController(
     {
         _logger.LogDebug("GetUser for id={id}", id);
         var ch = await _userInformationService.CheckAdminOrSameUser(id, _curUserId);
-        if (ch == null || !ch.Value)
+        if (!ch)
         {
             _logger.LogDebug("GetUser returning '403 Forbidden'");
             return _403();
@@ -131,21 +131,13 @@ public class UsersController(
             Email = user.Email,
             Password = hashToStoreInDb,
             Allowance = user.HasRole(UserRoleConstants.Customer) ? user.Allowance : null,
-            Uid = user.HasRole(UserRoleConstants.Customer) || user.HasRole(UserRoleConstants.Operator) ? user.Uid : null
+            Uid = user.HasRole(UserRoleConstants.Customer) || user.HasRole(UserRoleConstants.Operator) ? user.Uid : null,
+            RoleId = user.Role != null ? (int)user.Role.Value : null
         };
 
         _db.Users.Add(ur);
         await _db.SaveChangesAsync(); // This assigns ur.Id
 
-        if (user.Roles != null && user.Roles.Count > 0)
-        {
-            var rolesInDb = _db.Roles.Where(r => user.Roles.Contains(r.RoleId)).ToList();
-            foreach (var role in rolesInDb)
-            {
-                _db.UserRoles.Add(new UserRole { UserId = ur.Id, RoleId = role.Id });
-            }
-            await _db.SaveChangesAsync(); // Save the user roles
-        }
 
         var reference = new Reference { Id = ur.Id };
         _logger.LogDebug("PostUser returning: {res}", reference.ToString());
@@ -166,22 +158,16 @@ public class UsersController(
             _logger.LogDebug("PutUser returning '404 Not Found'");
             return _404User(id);
         }
-        
-        bool adminRequired = update.IsAdministrator() && !user.IsAdministrator();
-        bool isAdmin = await _userInformationService.CheckAdmin(_curUserId);
-        
-        // Check if user is trying to change Allowance or Uid without being admin
-        bool tryingToChangeAllowanceOrUid = update.Allowance != null || update.Uid != null;
-        if (tryingToChangeAllowanceOrUid && !isAdmin)
-        {
-            _logger.LogDebug("PutUser returning '403 Forbidden' - non-admin trying to change Allowance or Uid");
-            return _403();
-        }
 
-        ActionResult<bool> ch;
-        ch = adminRequired ? await _userInformationService.CheckAdmin(_curUserId) :
-                             await _userInformationService.CheckAdminOrSameUser(id, _curUserId);
-        if (ch == null || !ch.Value)
+        bool adminRequired =
+            (update.Role != null && update.Role != user.Role?.RoleId) ||
+            (update.Allowance != null &&  update.Allowance != user.Allowance) ||
+            (update.Uid != null &&  update.Uid != user.Uid);
+
+        var (isAdmin, isAdminOrSameUser) = await _userInformationService.CheckAdminAndSameUser(id, _curUserId);
+        bool ch = adminRequired ? isAdmin : isAdminOrSameUser;
+
+        if (!ch)
         {
             _logger.LogDebug("PutUser returning '403 Forbidden'");
             return _403();
@@ -196,54 +182,18 @@ public class UsersController(
         if (update.FirstName != null) user.FirstName = update.FirstName;
         if (update.LastName != null) user.LastName = update.LastName;
         if (update.Patronymic != null) user.Patronymic = update.Patronymic;
-
-        // Copy user roles from update to database
-        if (update.Roles != null && update.Roles.Count > 0)
-        {
-            // Remove existing roles
-            var existingUserRoles = _db.UserRoles.Where(ur => ur.UserId == user.Id);
-            _db.UserRoles.RemoveRange(existingUserRoles);
-
-            // Add new roles
-            var rolesInDb = _db.Roles.Where(r => update.Roles.Contains(r.RoleId)).ToList();
-            foreach (var role in rolesInDb)
-            {
-                _db.UserRoles.Add(new UserRole { UserId = user.Id, RoleId = role.Id });
-            }
-        }
-
-        // Only administrators can change Allowance and Uid
         if (isAdmin)
         {
-            bool isCustomer = update.Roles != null
-                ? update.Roles.Contains(UserRoleConstants.Customer)
-                : user.HasRole(UserRoleConstants.Customer);
-
-            bool hasUidAccess = update.Roles != null
-                ? update.Roles.Contains(UserRoleConstants.Customer) || update.Roles.Contains(UserRoleConstants.Operator)
-                : user.HasUidAccess();
-
-            if (isCustomer)
+            if (update.Role != user.Role?.RoleId)
             {
-                user.Allowance = update.Allowance;
+                user.RoleId = update.Role != null ? (int)update.Role.Value : null;
             }
-            else
-            {
-                // Clear allowance for non-customers
-                user.Allowance = null;
-            }
-
-            if (hasUidAccess)
-            {
-                user.Uid = update.Uid;
-            }
-            else
-            {
-                // Clear uid for non-customers and non-operators
-                user.Uid = null;
-            }
+            if (update.Allowance != user.Allowance)
+                user.Allowance = user.Role?.RoleId == UserRoleConstants.Customer ? update.Allowance : null;
+            if (update.Uid != user.Uid) user.Uid = update.Uid;
+            user.Uid = user.Role?.RoleId == UserRoleConstants.Customer ||
+                       user.Role?.RoleId == UserRoleConstants.Operator ? update.Uid : null;
         }
-
         if (update.Password != null) user.Password = BCrypt.Net.BCrypt.HashPassword(update.Password);
 
         _db.Entry(user).State = EntityState.Modified;

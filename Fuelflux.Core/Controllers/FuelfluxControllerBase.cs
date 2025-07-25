@@ -38,20 +38,21 @@ public class FuelfluxControllerPreBase(AppDbContext db, ILogger logger) : Contro
         return StatusCode(StatusCodes.Status400BadRequest,
                           new ErrMessage() { Msg = "Нарушена целостность запроса" });
     }
-    protected ObjectResult _400EmptyRegister()
+    protected ObjectResult _400Intake(string msg)
     {
         return StatusCode(StatusCodes.Status400BadRequest,
-                          new ErrMessage() { Msg = "Пустой файл реестра" });
+                          new ErrMessage() { Msg = $"Некорректный запрос \"приём топлива\": {msg}" });
     }
-    protected ObjectResult _400NoRegister()
+    protected ObjectResult _400Refuel(string msg)
     {
         return StatusCode(StatusCodes.Status400BadRequest,
-                          new ErrMessage() { Msg = "Файл реестра не найден в архиве" });
+                          new ErrMessage() { Msg = $"Некорректный запрос \"заправка\": {msg}" });
     }
-    protected ObjectResult _400UnsupportedFileType(string ext)
+
+    protected ObjectResult _400PumpUsers(string msg)
     {
         return StatusCode(StatusCodes.Status400BadRequest,
-                          new ErrMessage() { Msg = $"Файлы формата {ext} не поддерживаются. Можно загрузить .xlsx, .xls, .zip, .rar" });
+                          new ErrMessage() { Msg = $"Некорректный запрос \"пользователи\": {msg}" });
     }
 
     protected ObjectResult _401()
@@ -73,6 +74,11 @@ public class FuelfluxControllerPreBase(AppDbContext db, ILogger logger) : Contro
     {
         return StatusCode(StatusCodes.Status404NotFound,
                           new ErrMessage { Msg = $"Не удалось найти реестр [id={id}]" });
+    }
+    protected ObjectResult _404FuelTank(decimal number)
+    {
+        return StatusCode(StatusCodes.Status404NotFound,
+                          new ErrMessage { Msg = $"Не удалось найти топливный бак [number={number}]" });
     }
     protected ObjectResult _409Email(string email)
     {

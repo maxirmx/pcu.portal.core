@@ -88,10 +88,8 @@ public class UsersControllerTests
             FirstName = "Admin",
             LastName = "User",
             Patronymic = "",
-            UserRoles =
-            [
-                new UserRole { UserId = 1, RoleId = _adminRole.Id, Role = _adminRole }
-            ]
+            RoleId = _adminRole.Id,
+            Role = _adminRole
         };
 
         _operatorUser = new User
@@ -102,10 +100,8 @@ public class UsersControllerTests
             FirstName = "Operator",
             LastName = "User",
             Patronymic = "",
-            UserRoles =
-            [
-                new UserRole { UserId = 2, RoleId = _operatorRole.Id, Role = _operatorRole }
-            ]
+            RoleId = _operatorRole.Id,
+            Role = _operatorRole
         };
 
         _customerUser = new User
@@ -116,10 +112,8 @@ public class UsersControllerTests
             FirstName = "Customer",
             LastName = "User",
             Patronymic = "",
-            UserRoles =
-            [
-                new UserRole { UserId = 3, RoleId = _customerRole.Id, Role = _customerRole }
-            ]
+            RoleId = _customerRole.Id,
+            Role = _customerRole
         };
 
         // Setup mocks
@@ -201,7 +195,7 @@ public class UsersControllerTests
 
         var expectedUser = new UserViewItem(_customerUser);
 
-        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(3, 1)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(3, 1)).ReturnsAsync(true);
         _mockUserInformationService.Setup(x => x.UserViewItem(3)).ReturnsAsync(expectedUser);
 
         // Act
@@ -225,7 +219,7 @@ public class UsersControllerTests
 
         var expectedUser = new UserViewItem(_operatorUser);
 
-        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 2)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 2)).ReturnsAsync(true);
         _mockUserInformationService.Setup(x => x.UserViewItem(2)).ReturnsAsync(expectedUser);
 
         // Act
@@ -247,7 +241,7 @@ public class UsersControllerTests
         _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
 
-        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(1, 2)).ReturnsAsync(new ActionResult<bool>(false));
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(1, 2)).ReturnsAsync(false);
 
         // Act
         var result = await _controller.GetUser(1); // Getting admin user
@@ -267,7 +261,7 @@ public class UsersControllerTests
         _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
         await _dbContext.SaveChangesAsync();
 
-        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(999, 1)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(999, 1)).ReturnsAsync(true);
         _mockUserInformationService.Setup(x => x.UserViewItem(999)).ReturnsAsync((UserViewItem?)null);
 
         // Act
@@ -295,7 +289,7 @@ public class UsersControllerTests
 
         var expectedUser = new UserViewItem(_customerUser);
 
-        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(3, 3)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(3, 3)).ReturnsAsync(true);
         _mockUserInformationService.Setup(x => x.UserViewItem(3)).ReturnsAsync(expectedUser);
 
         // Act
@@ -310,6 +304,46 @@ public class UsersControllerTests
         // User can view their own allowance and uid even though they cannot change them
         Assert.That(user.Allowance, Is.EqualTo(100.50m));
         Assert.That(user.Uid, Is.EqualTo("CUSTOMER_UID_123"));
+    }
+
+    [Test]
+    public async Task GetUser_ReturnsUserWithoutRole()
+    {
+        // Arrange
+        SetCurrentUserId(1); // Admin user
+        
+        var userWithoutRole = new User
+        {
+            Id = 4,
+            Email = "norole@example.com",
+            Password = BCrypt.Net.BCrypt.HashPassword("password123"),
+            FirstName = "No",
+            LastName = "Role",
+            Patronymic = "",
+            RoleId = null, // No role
+            Role = null
+        };
+        
+        _dbContext.Users.AddRange(_adminUser, userWithoutRole);
+        await _dbContext.SaveChangesAsync();
+
+        var expectedUser = new UserViewItem(userWithoutRole);
+
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(4, 1)).ReturnsAsync(true);
+        _mockUserInformationService.Setup(x => x.UserViewItem(4)).ReturnsAsync(expectedUser);
+
+        // Act
+        var result = await _controller.GetUser(4); // Getting user without role
+
+        // Assert
+        Assert.That(result.Value, Is.Not.Null);
+        Assert.That(result.Value, Is.TypeOf<UserViewItem>());
+        var user = result.Value;
+        Assert.That(user!.Id, Is.EqualTo(4));
+        Assert.That(user.Email, Is.EqualTo("norole@example.com"));
+        Assert.That(user.Role, Is.Null); // No role
+        Assert.That(user.Allowance, Is.Null); // No allowance
+        Assert.That(user.Uid, Is.Null); // No UID
     }
 
     #endregion
@@ -331,7 +365,7 @@ public class UsersControllerTests
             FirstName = "New",
             LastName = "User",
             Patronymic = "",
-            Roles = [ UserRoleConstants.Customer ] // Assigning role by enum value
+            Role = UserRoleConstants.Customer
         };
 
         _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
@@ -355,7 +389,7 @@ public class UsersControllerTests
         Assert.That(savedUser!.Email, Is.EqualTo("new@example.com"));
         // Check that password was hashed
         Assert.That(BCrypt.Net.BCrypt.Verify("newpassword", savedUser.Password), Is.True);
-        Assert.That(savedUser.UserRoles, Has.Count.EqualTo(1));
+        Assert.That(savedUser.RoleId, Is.EqualTo((int)UserRoleConstants.Customer));
     }
 
     [Test]
@@ -415,6 +449,50 @@ public class UsersControllerTests
         Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status409Conflict));
     }
 
+    [Test]
+    public async Task PostUser_CreatesUserWithoutRole_WhenUserIsAdmin()
+    {
+        // Arrange
+        SetCurrentUserId(1); // Admin user
+        _dbContext.Users.Add(_adminUser);
+        await _dbContext.SaveChangesAsync();
+
+        var newUser = new UserCreateItem
+        {
+            Email = "norole@example.com",
+            Password = "newpassword",
+            FirstName = "No",
+            LastName = "Role",
+            Patronymic = "",
+            Role = null // No role assigned
+        };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
+        _mockUserInformationService.Setup(x => x.Exists("norole@example.com")).Returns(false);
+
+        // Act
+        var result = await _controller.PostUser(newUser);
+
+        // Assert
+        Assert.That(result.Result, Is.TypeOf<CreatedAtActionResult>());
+        var createdAtActionResult = result.Result as CreatedAtActionResult;
+        Assert.That(createdAtActionResult!.ActionName, Is.EqualTo(nameof(UsersController.PostUser)));
+        Assert.That(createdAtActionResult.Value, Is.TypeOf<Reference>());
+
+        var reference = createdAtActionResult.Value as Reference;
+        Assert.That(reference!.Id, Is.GreaterThan(0));
+
+        // Verify user was added to database
+        var savedUser = await _dbContext.Users.FindAsync(reference.Id);
+        Assert.That(savedUser, Is.Not.Null);
+        Assert.That(savedUser!.Email, Is.EqualTo("norole@example.com"));
+        Assert.That(savedUser.RoleId, Is.Null); // No role assigned
+        Assert.That(savedUser.Allowance, Is.Null); // No allowance for users without roles
+        Assert.That(savedUser.Uid, Is.Null); // No UID for users without roles
+        // Check that password was hashed
+        Assert.That(BCrypt.Net.BCrypt.Verify("newpassword", savedUser.Password), Is.True);
+    }
+
     #endregion
 
     #region PutUser Tests
@@ -432,10 +510,10 @@ public class UsersControllerTests
             FirstName = "Updated",
             LastName = "Name",
             Email = "updated@example.com",
-            Roles = [UserRoleConstants.Customer]
+            Role = UserRoleConstants.Customer
         };
 
-        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 1)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.CheckAdminAndSameUser(2, 1)).ReturnsAsync((true, true));
         _mockUserInformationService.Setup(x => x.Exists("updated@example.com")).Returns(false);
 
         // Act
@@ -446,16 +524,14 @@ public class UsersControllerTests
 
         // Verify user was updated
         var updatedUser = await _dbContext.Users
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
+            .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.Id == 2);
 
         Assert.That(updatedUser, Is.Not.Null);
         Assert.That(updatedUser!.FirstName, Is.EqualTo("Updated"));
         Assert.That(updatedUser.LastName, Is.EqualTo("Name"));
         Assert.That(updatedUser.Email, Is.EqualTo("updated@example.com"));
-        Assert.That(updatedUser.UserRoles, Has.Count.EqualTo(1));
-        Assert.That(updatedUser.UserRoles.First().Role!.RoleId, Is.EqualTo(UserRoleConstants.Customer));
+        Assert.That(updatedUser.RoleId, Is.EqualTo((int)UserRoleConstants.Customer));
     }
 
     [Test]
@@ -473,7 +549,7 @@ public class UsersControllerTests
             // Not changing roles as non-admin
         };
 
-        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 2)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.CheckAdminAndSameUser(2, 2)).ReturnsAsync((false, true));
 
         // Act
         var result = await _controller.PutUser(2, updateItem);
@@ -502,7 +578,7 @@ public class UsersControllerTests
             LastName = "Update"
         };
 
-        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(1, 2)).ReturnsAsync(new ActionResult<bool>(false));
+        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(1, 2)).ReturnsAsync(false);
 
         // Act
         var result = await _controller.PutUser(1, updateItem);
@@ -549,7 +625,7 @@ public class UsersControllerTests
             Email = "admin@example.com" // Already exists
         };
 
-        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 1)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.CheckAdminAndSameUser(2, 1)).ReturnsAsync((true, true));
         _mockUserInformationService.Setup(x => x.Exists("admin@example.com")).Returns(true);
 
         // Act
@@ -574,7 +650,7 @@ public class UsersControllerTests
             Password = "newpassword123"
         };
 
-        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 1)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.CheckAdminAndSameUser(2, 1)).ReturnsAsync((true, true));
 
         // Act
         var result = await _controller.PutUser(2, updateItem);
@@ -599,7 +675,7 @@ public class UsersControllerTests
         var updateItem = new UserUpdateItem
         {
             FirstName = "Try",
-            Roles = [UserRoleConstants.Admin] // Trying to become admin
+            Role = UserRoleConstants.Admin // Trying to become admin
         };
 
         _mockUserInformationService.Setup(x => x.CheckAdmin(2)).ReturnsAsync(false);
@@ -679,8 +755,7 @@ public class UsersControllerTests
             // Not changing Allowance or Uid
         };
 
-        _mockUserInformationService.Setup(x => x.CheckAdmin(2)).ReturnsAsync(false);
-        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(2, 2)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.CheckAdminAndSameUser(2, 2)).ReturnsAsync((false, true));
         _mockUserInformationService.Setup(x => x.Exists("updated.operator@example.com")).Returns(false);
 
         // Act
@@ -710,11 +785,11 @@ public class UsersControllerTests
             FirstName = "AdminUpdated",
             Allowance = 200.75m,
             Uid = "ADMIN_SET_UID",
-            Roles = [UserRoleConstants.Customer] // Making user customer to allow allowance
+            Role = UserRoleConstants.Customer // Making user customer to allow allowance
         };
 
         _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
-        _mockUserInformationService.Setup(x => x.CheckAdminOrSameUser(3, 1)).ReturnsAsync(new ActionResult<bool>(true));
+        _mockUserInformationService.Setup(x => x.CheckAdminAndSameUser(3, 1)).ReturnsAsync((true, true));
 
         // Act
         var result = await _controller.PutUser(3, updateItem); // Updating customer
@@ -724,8 +799,7 @@ public class UsersControllerTests
 
         // Verify user was updated including allowance and uid
         var updatedUser = await _dbContext.Users
-            .Include(u => u.UserRoles)
-            .ThenInclude(ur => ur.Role)
+            .Include(u => u.Role)
             .FirstOrDefaultAsync(u => u.Id == 3);
 
         Assert.That(updatedUser, Is.Not.Null);
@@ -753,6 +827,66 @@ public class UsersControllerTests
 
         // Act
         var result = await _controller.PutUser(3, updateItem);
+
+        // Assert
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var objectResult = result as ObjectResult;
+        Assert.That(objectResult!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task PutUser_AllowsAdminToRemoveRole()
+    {
+        // Arrange
+        SetCurrentUserId(1); // Admin user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser);
+        await _dbContext.SaveChangesAsync();
+
+        var updateItem = new UserUpdateItem
+        {
+            FirstName = "Updated",
+            Role = null // Removing role
+        };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(1)).ReturnsAsync(true);
+        _mockUserInformationService.Setup(x => x.CheckAdminAndSameUser(2, 1)).ReturnsAsync((true, true));
+
+        // Act
+        var result = await _controller.PutUser(2, updateItem);
+
+        // Assert
+        Assert.That(result, Is.TypeOf<NoContentResult>());
+
+        // Verify user was updated
+        var updatedUser = await _dbContext.Users
+            .Include(u => u.Role)
+            .FirstOrDefaultAsync(u => u.Id == 2);
+
+        Assert.That(updatedUser, Is.Not.Null);
+        Assert.That(updatedUser!.FirstName, Is.EqualTo("Updated"));
+        Assert.That(updatedUser.RoleId, Is.Null); // Role removed
+        Assert.That(updatedUser.Allowance, Is.Null); // Allowance cleared
+        Assert.That(updatedUser.Uid, Is.Null); // UID cleared
+    }
+
+    [Test]
+    public async Task PutUser_ReturnsForbidden_WhenNonAdminTriesToChangeToNoRole()
+    {
+        // Arrange
+        SetCurrentUserId(2); // Operator user
+        _dbContext.Users.AddRange(_adminUser, _operatorUser, _customerUser);
+        await _dbContext.SaveChangesAsync();
+
+        var updateItem = new UserUpdateItem
+        {
+            FirstName = "Operator",
+            Role = null // Trying to remove role
+        };
+
+        _mockUserInformationService.Setup(x => x.CheckAdmin(2)).ReturnsAsync(false);
+
+        // Act
+        var result = await _controller.PutUser(2, updateItem);
 
         // Assert
         Assert.That(result, Is.TypeOf<ObjectResult>());
