@@ -4,12 +4,22 @@ using Fuelflux.Core.Settings;
 
 namespace Fuelflux.Core.RestModels;
 
-public class FuelTankViewItem(FuelTank tank)
+public class FuelTankViewItem
 {
-    public int Id { get; set; } = tank.Id;
-    public decimal Number { get; set; } = tank.Number;
-    public decimal Allowance { get; set; } = tank.Volume;
-    public int FuelStationId { get; set; } = tank.FuelStationId;
+    public FuelTankViewItem() { }
+
+    public FuelTankViewItem(FuelTank tank)
+    {
+        Id = tank.Id;
+        Number = tank.Number;
+        Volume = tank.Volume;
+        FuelStationId = tank.FuelStationId;
+    }
+
+    public int Id { get; set; }
+    public decimal? Number { get; set; }
+    public decimal? Volume { get; set; }
+    public int? FuelStationId { get; set; }
 
     public override string ToString()
     {

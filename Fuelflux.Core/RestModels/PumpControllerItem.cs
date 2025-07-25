@@ -4,11 +4,20 @@ using Fuelflux.Core.Settings;
 
 namespace Fuelflux.Core.RestModels;
 
-public class PumpControllerItem(PumpCntrl pump)
+public class PumpControllerItem
 {
-    public int Id { get; set; } = pump.Id;
-    public string Uid { get; set; } = pump.Uid;
-    public int FuelStationId { get; set; } = pump.FuelStationId;
+    public PumpControllerItem() { }
+
+    public PumpControllerItem(PumpCntrl pump)
+    {
+        Id = pump.Id;
+        Uid = pump.Uid;
+        FuelStationId = pump.FuelStationId;
+    }
+
+    public int Id { get; set; }
+    public string? Uid { get; set; }
+    public int? FuelStationId { get; set; }
 
     public override string ToString()
     {
