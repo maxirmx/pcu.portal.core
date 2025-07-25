@@ -305,4 +305,219 @@ public class FuelStationControllerTests
         Assert.That(result, Is.TypeOf<NoContentResult>());
         Assert.That(_db.PumpControllers.Count(), Is.EqualTo(0));
     }
+
+    [Test]
+    public async Task GetStation_ReturnsForbidden_WhenNotAdmin()
+    {
+        var fs = new FuelStation { Id = 20, Name = "fs" };
+        _db.FuelStations.Add(fs);
+        await _db.SaveChangesAsync();
+        SetCurrentUser(2);
+        _uis.Setup(u => u.CheckAdmin(2)).ReturnsAsync(false);
+        var result = await _controller.GetStation(20);
+        Assert.That(result.Result, Is.TypeOf<ObjectResult>());
+        var obj = result.Result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task PutStation_ReturnsNotFound_WhenMissing()
+    {
+        SetCurrentUser(1);
+        _uis.Setup(u => u.CheckAdmin(1)).ReturnsAsync(true);
+        var update = new FuelStationItem { Name = "new" };
+        var result = await _controller.PutStation(99, update);
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status404NotFound));
+    }
+
+    [Test]
+    public async Task PutStation_ReturnsForbidden_WhenNotAdmin()
+    {
+        var fs = new FuelStation { Id = 21, Name = "old" };
+        _db.FuelStations.Add(fs);
+        await _db.SaveChangesAsync();
+        SetCurrentUser(2);
+        _uis.Setup(u => u.CheckAdmin(2)).ReturnsAsync(false);
+        var update = new FuelStationItem { Name = "new" };
+        var result = await _controller.PutStation(21, update);
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task DeleteStation_ReturnsNotFound_WhenMissing()
+    {
+        SetCurrentUser(1);
+        _uis.Setup(u => u.CheckAdmin(1)).ReturnsAsync(true);
+        var result = await _controller.DeleteStation(99);
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status404NotFound));
+    }
+
+    [Test]
+    public async Task DeleteStation_ReturnsForbidden_WhenNotAdmin()
+    {
+        var fs = new FuelStation { Id = 22, Name = "fs" };
+        _db.FuelStations.Add(fs);
+        await _db.SaveChangesAsync();
+        SetCurrentUser(2);
+        _uis.Setup(u => u.CheckAdmin(2)).ReturnsAsync(false);
+        var result = await _controller.DeleteStation(22);
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task PostTank_ReturnsForbidden_WhenNotAdmin()
+    {
+        var item = new FuelTankItem { Number = 1, Volume = 1m, FuelStationId = 1 };
+        SetCurrentUser(2);
+        _uis.Setup(u => u.CheckAdmin(2)).ReturnsAsync(false);
+        var result = await _controller.PostTank(item);
+        Assert.That(result.Result, Is.TypeOf<ObjectResult>());
+        var obj = result.Result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task DeleteTank_ReturnsNotFound_WhenMissing()
+    {
+        SetCurrentUser(1);
+        _uis.Setup(u => u.CheckAdmin(1)).ReturnsAsync(true);
+        var result = await _controller.DeleteTank(99);
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status404NotFound));
+    }
+
+    [Test]
+    public async Task DeleteTank_ReturnsForbidden_WhenNotAdmin()
+    {
+        var fs = new FuelStation { Id = 23, Name = "fs" };
+        var tank = new FuelTank { Id = 50, Number = 1, Volume = 1m, FuelStationId = 23, FuelStation = fs };
+        _db.FuelStations.Add(fs);
+        _db.FuelTanks.Add(tank);
+        await _db.SaveChangesAsync();
+        SetCurrentUser(2);
+        _uis.Setup(u => u.CheckAdmin(2)).ReturnsAsync(false);
+        var result = await _controller.DeleteTank(50);
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task GetPump_ReturnsPump_WhenAdmin()
+    {
+        var fs = new FuelStation { Id = 24, Name = "fs" };
+        var pump = new PumpCntrl { Id = 10, Uid = "p", FuelStationId = 24, FuelStation = fs };
+        _db.FuelStations.Add(fs);
+        _db.PumpControllers.Add(pump);
+        await _db.SaveChangesAsync();
+        SetCurrentUser(1);
+        _uis.Setup(u => u.CheckAdmin(1)).ReturnsAsync(true);
+        var result = await _controller.GetPump(10);
+        Assert.That(result.Value, Is.Not.Null);
+        Assert.That(result.Value!.Uid, Is.EqualTo("p"));
+    }
+
+    [Test]
+    public async Task GetPump_ReturnsNotFound_WhenMissing()
+    {
+        SetCurrentUser(1);
+        _uis.Setup(u => u.CheckAdmin(1)).ReturnsAsync(true);
+        var result = await _controller.GetPump(99);
+        Assert.That(result.Result, Is.TypeOf<ObjectResult>());
+        var obj = result.Result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status404NotFound));
+    }
+
+    [Test]
+    public async Task GetPump_ReturnsForbidden_WhenNotAdmin()
+    {
+        var fs = new FuelStation { Id = 25, Name = "fs" };
+        var pump = new PumpCntrl { Id = 11, Uid = "pf", FuelStationId = 25, FuelStation = fs };
+        _db.FuelStations.Add(fs);
+        _db.PumpControllers.Add(pump);
+        await _db.SaveChangesAsync();
+        SetCurrentUser(2);
+        _uis.Setup(u => u.CheckAdmin(2)).ReturnsAsync(false);
+        var result = await _controller.GetPump(11);
+        Assert.That(result.Result, Is.TypeOf<ObjectResult>());
+        var obj = result.Result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task PostPump_ReturnsForbidden_WhenNotAdmin()
+    {
+        var item = new PumpControllerItem { Uid = "uid2", FuelStationId = 1 };
+        SetCurrentUser(2);
+        _uis.Setup(u => u.CheckAdmin(2)).ReturnsAsync(false);
+        var result = await _controller.PostPump(item);
+        Assert.That(result.Result, Is.TypeOf<ObjectResult>());
+        var obj = result.Result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task PutPump_ReturnsNotFound_WhenMissing()
+    {
+        SetCurrentUser(1);
+        _uis.Setup(u => u.CheckAdmin(1)).ReturnsAsync(true);
+        var update = new PumpControllerItem { Uid = "x" };
+        var result = await _controller.PutPump(99, update);
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status404NotFound));
+    }
+
+    [Test]
+    public async Task PutPump_ReturnsForbidden_WhenNotAdmin()
+    {
+        var fs = new FuelStation { Id = 26, Name = "fs" };
+        var pump = new PumpCntrl { Id = 12, Uid = "u12", FuelStationId = 26, FuelStation = fs };
+        _db.FuelStations.Add(fs);
+        _db.PumpControllers.Add(pump);
+        await _db.SaveChangesAsync();
+        SetCurrentUser(2);
+        _uis.Setup(u => u.CheckAdmin(2)).ReturnsAsync(false);
+        var update = new PumpControllerItem { Uid = "y" };
+        var result = await _controller.PutPump(12, update);
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
+
+    [Test]
+    public async Task DeletePump_ReturnsNotFound_WhenMissing()
+    {
+        SetCurrentUser(1);
+        _uis.Setup(u => u.CheckAdmin(1)).ReturnsAsync(true);
+        var result = await _controller.DeletePump(99);
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status404NotFound));
+    }
+
+    [Test]
+    public async Task DeletePump_ReturnsForbidden_WhenNotAdmin()
+    {
+        var fs = new FuelStation { Id = 27, Name = "fs" };
+        var pump = new PumpCntrl { Id = 13, Uid = "del", FuelStationId = 27, FuelStation = fs };
+        _db.FuelStations.Add(fs);
+        _db.PumpControllers.Add(pump);
+        await _db.SaveChangesAsync();
+        SetCurrentUser(2);
+        _uis.Setup(u => u.CheckAdmin(2)).ReturnsAsync(false);
+        var result = await _controller.DeletePump(13);
+        Assert.That(result, Is.TypeOf<ObjectResult>());
+        var obj = result as ObjectResult;
+        Assert.That(obj!.StatusCode, Is.EqualTo(StatusCodes.Status403Forbidden));
+    }
 }
